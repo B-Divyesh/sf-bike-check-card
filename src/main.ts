@@ -62,7 +62,7 @@ function homeTemplate(savedCount: number) {
       <section class="hero">
         <div class="hero-copy">
           <p class="kicker"><span>Offline field sheet</span> / No account</p>
-          <h1>Catch the fault<br><em>before</em> it disappears.</h1>
+          <h1>Catch the fault <br><em>before</em> it disappears.</h1>
           <p class="lede">Record the bike, exact symptom, measurements, ride context and marked-up photos in one check card—ready for a mechanic or community reply.</p>
           <div class="hero-actions">
             <a class="button button-primary" href="/?edit=1" data-nav>Start a check card <span aria-hidden="true">→</span></a>
