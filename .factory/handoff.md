@@ -1,8 +1,47 @@
-# Bike Check Card — build handoff
+# Bike Check Card — verification handoff
 
-Work order: `bike-check-card-build-1`
+Work order: `bike-check-card-verify-1`
 
 Completed: 2026-08-27
+
+## Final result: FAIL (deployment release gate)
+
+Candidate: `6a31bffecd9818a4aff89b98ded12e5776e76b87`
+URL: <https://bike-check-card.sociobot.in>
+
+The live product exactly matches the candidate build and the local-first bike
+fault-card workflow passes functional, offline, accessibility, privacy, mobile,
+and performance checks. Do not release until hosting gives hashed static assets
+long-lived immutable caching. Production currently serves every checked static
+asset with `Cache-Control: public, must-revalidate, max-age=30`, which violates
+the required PWA cache policy.
+
+See [verification.md](verification.md) for commands, exact evidence, live hash
+matches, end-to-end coverage, and severity-ranked defects.
+
+## Verification commands and outcome
+
+```sh
+npm ci
+npm test                 # 5/5 passed
+npm run build            # passed; includes tsc --noEmit and creates dist/
+npm run test:e2e         # 8/8 passed, desktop + Pixel 5
+```
+
+Lighthouse 13 against the local production preview: Performance 93,
+Accessibility 100, Best Practices 100, SEO 100 (FCP 0.9 s, LCP 2.4 s,
+TBT 230 ms, CLS 0). Initial JavaScript is 33.6 KB uncompressed / 11.5 KB gzip;
+CSS is 17.5 KB / 4.7 KB gzip; the mobile hero is 60.9 KB.
+
+## Required next steps
+
+1. Configure `/assets/*` content-hashed files for `max-age=31536000, immutable`.
+   Keep `index.html` and `sw.js` short-lived/revalidated for update discovery.
+2. Serve `/manifest.webmanifest` as `application/manifest+json; charset=utf-8`.
+3. Add CSP, clickjacking protection, Permissions-Policy, and a one-year HSTS
+   policy if `preload` is retained.
+
+## Builder handoff retained for product scope
 
 ## What shipped
 
