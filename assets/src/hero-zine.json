@@ -1,0 +1,8 @@
+{
+  "generator": "/opt/fleet/lib/gen-image.sh",
+  "deployment": "factory-image",
+  "date": "2026-08-27",
+  "size": "1536x1024",
+  "quality": "high",
+  "prompt": "Use case: stylized-concept. Asset type: landscape landing-page editorial illustration. Scene: top-down bicycle fault evidence kit on a warm cream workshop bench. Subject: partial geometrically accurate bicycle wheel rim and tyre sidewall, compact analog pressure gauge with no branding, two blank instant-photo frames, an unbranded paper checklist with only abstract pencil lines and red grease-pencil arrows, and a small strip of faded yellow workshop tape. Style: 1980s photocopied cycling workshop zine, torn cream paper, carbon-black ink, coarse halftone, registration-red accents, muted workshop green, tactile cut-paper collage, crisp shallow paper shadows. Composition: landscape, objects grouped through centre and right, crop-safe, editorial negative space, flat overhead workbench light, top-down 50mm equivalent. Constraints: no people, no hands, no brands, no logos, no readable or pseudo-readable text, no watermark, no safety verdict symbols, no gradients, no neon, no glossy 3D UI, no distorted wheel geometry."
+}

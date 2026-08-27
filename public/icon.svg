@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Bike Check Card logo</title>
+  <rect width="512" height="512" fill="#f3ecd8"/>
+  <path d="M88 64h290l46 46v338H88z" fill="#fffdf5" stroke="#171713" stroke-width="24"/>
+  <path d="M378 64v60h46" fill="#f2ca52" stroke="#171713" stroke-width="24"/>
+  <circle cx="256" cy="292" r="104" fill="none" stroke="#171713" stroke-width="20"/>
+  <path d="M256 188v208M152 292h208M182 218l148 148M330 218L182 366" stroke="#171713" stroke-width="10"/>
+  <path d="M154 390 358 190" stroke="#b92d24" stroke-width="34" stroke-linecap="square"/>
+  <circle cx="256" cy="292" r="20" fill="#f2ca52" stroke="#171713" stroke-width="10"/>
+</svg>

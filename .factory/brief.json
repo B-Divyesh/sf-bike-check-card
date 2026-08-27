@@ -1,0 +1,11 @@
+{
+  "slug": "bike-check-card",
+  "title": "Bike Check Card",
+  "territory": "utilities",
+  "user": "A self-maintaining cyclist who needs to capture a fault's exact symptoms, component state, photos, and ride context before deciding whether to pause riding or ask a mechanic/community for help.",
+  "smallest_useful_product": "Offline form for bike, component, mileage, pressure, symptom timeline, sensor-vs-GPS reading, and annotated photos; exports a single private link/PDF. Non-goals: diagnosing safety, recommending replacement, telemetry ingestion, or social feeds.",
+  "success_measure": "In a 20-cyclist test, at least 12 create and share a complete check card in under four minutes, with at least 80% containing bike, component, symptom, and one measurement.",
+  "artifact_class": "pwa-offline",
+  "monetization": "one-time",
+  "constraints": "Make the no-safety-advice boundary explicit; keep photos local until the user exports; avoid claiming compatibility with a component manufacturer's warranty process."
+}
