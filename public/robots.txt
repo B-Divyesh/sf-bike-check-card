@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://bike-check-card.sociobot.in/sitemap.xml
