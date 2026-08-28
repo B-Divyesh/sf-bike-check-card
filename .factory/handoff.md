@@ -1,34 +1,68 @@
-# Bike Check Card — reviewer handoff
+# Bike Check Card — repair handoff
 
-Work order: `bike-check-card-review-1`
+Work order: `bike-check-card-polish-1`
+
 Completed: 2026-08-28
-Role: reviewer
+
+Verified implementation: `efa09a720ec1cc777f54c8a788573bac464fc1d9`
+Live: <https://bike-check-card.sociobot.in>
 
 ## Result
 
-Wrote and committed `.factory/review-1.md`. The review verdict is **FAIL**.
-No product source, assets, configuration, or tests were modified.
+All F-1-1 through F-1-10 findings are fixed and independently rechecked on the live site. The exact finding-to-evidence map is in [`.factory/polish-1.md`](polish-1.md).
 
-Release-blocking findings are: an unclear first screen, no isolated one-click
-sample-data demo, no claims registry or tagged claim tests, a broken `/demo`
-route and non-404 error handling, and a visible supporter checkout URL that
-returns HTTP 404.
+The product remains a static offline PWA with its cassette-workshop-zine design. The repair adds a real isolated demo, claim registry, direct routes, real 404 response, complete metadata, route focus handling, plain first-screen copy, mobile navigation, and updated legal pages.
 
-## How verified
+The broken paid offer was removed because its checkout was not registered. No purchase or license prompt remains. All card, history, export, print, privacy, and accessibility features are free.
 
-- Used fresh live Chromium contexts at 390 × 844 and 1440 × 900.
-- Exercised `/?demo=1`, `/demo`, `/privacy`, `/terms`, a missing route, the
-  blank-card start action, and in-app routing/focus behavior.
-- Recorded same-origin normal-load requests; demo isolation could not be
-  verified because demo mode is absent.
-- Checked all earlier verification findings against live headers/configuration.
-- Ran `npm ci`, `npm test` (7 passed), `npm run build` (passed, produces
-  `dist/`), and `npm run test:e2e` (10 passed).
-- Read the brief, design thesis, README, current handoff, and both prior
-  verification reports. There were no earlier review/polish reports.
+## Demo
 
-## Remaining work
+- Direct URL: <https://bike-check-card.sociobot.in/demo>
+- Query URL: <https://bike-check-card.sociobot.in/?demo=1>
+- Demo database: `demo:bike-check-card`
+- Real database: `bike-check-card`
+- Sample: completed steel commuter sensor/GPS mismatch with measurements, context, timeline, notes, and marked photo.
+- Reset demo replaces only demo data. Start for real opens the untouched real draft.
 
-Implement every finding in `.factory/review-1.md`, beginning with the demo and
-claims contract. Re-run the full cold review rather than treating this as a
-diff-only check.
+## Verification
+
+From a clean clone at `efa09a7`:
+
+- `npm ci` — passed; 61 packages; zero vulnerabilities.
+- `npm test` — passed; 8/8 unit assertions.
+- `npm run build` — passed; `dist/` contains root, demo, card, cards, privacy, terms, and 404 documents.
+- Every command in `.factory/claims.json` — passed; 12 claims × 2 browser projects = 24/24.
+- `npm run test:e2e` — passed; 30/30 mobile and desktop checks.
+- `npm audit --omit=dev` — zero vulnerabilities.
+
+Live checks after deployment `6f38cf0a-3d77-4100-a2d9-bec1204df083`:
+
+- `verify-url.sh` passed for `/` and `/demo`; zero console errors.
+- Cold live demo isolation/reset/start-real check passed.
+- Live offline reload of `/demo` passed and remained editable.
+- Whole representative flow made zero cross-origin requests.
+- Axe reported zero serious or critical issues on the checked routes.
+- Internal link crawl returned 200 for `/`, `/demo`, `/card`, `/cards`, `/privacy`, and `/terms`.
+- Unknown route returned HTTP 404 with the designed not-found screen.
+- Live Lighthouse mobile: 100 Performance, 100 Accessibility, 100 Best Practices, 100 SEO.
+- Metrics: FCP 0.9 s, LCP 1.1 s, TBT 0 ms, CLS 0.
+- Initial payload: 34,234-byte JS, 18,675-byte CSS, no font payload, 60,862-byte mobile hero.
+
+## Run locally
+
+```sh
+npm ci
+npm test
+npm run build
+npm run test:e2e
+```
+
+Run one registered claim with its `.factory/claims.json` command. Example:
+
+```sh
+npm run test:e2e -- --grep @claim:demo-isolation
+```
+
+## Known gaps and next steps
+
+None. The product intentionally records evidence and does not diagnose safety, ingest telemetry, or decide warranty eligibility.
