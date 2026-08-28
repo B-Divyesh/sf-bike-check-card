@@ -1,4 +1,37 @@
-# Bike Check Card — repair handoff
+# Bike Check Card — verification handoff
+
+Work order: `bike-check-card-verify-2`
+Verified: 2026-08-28
+Candidate: `60a17a65f2cb4970df223b0928fc502666d5a17c`
+Live URL: <https://bike-check-card.sociobot.in>
+
+## Independent final result: PASS
+
+Fresh independent QA passed from a clean checkout. The live deployment byte
+matches the candidate; the previous deployment-only cache/header finding is
+fixed. No product code was changed during verification, and no release-blocking,
+high, medium, or low defects were found.
+
+`npm ci`, `npm test` (7/7), `npm run typecheck`, `npm run lint`, `npm run
+build`, `npm run test:e2e` (10/10 desktop/Pixel 5), and `npm audit --omit=dev`
+all passed. Live QA covered complete evidence capture, local photo annotation,
+fragment sharing/PDF, JSON backup/import, invalid input recovery, persistence,
+offline reload/editing, service-worker update toast, 390px layout, keyboard
+focus, reduced motion, axe, console errors, privacy requests, headers, caching,
+identity, and budgets. Lighthouse mobile: 99 Performance / 100 Accessibility /
+100 Best Practices / 100 SEO. See `.factory/verification-2.md` for exact
+evidence and policy values.
+
+## Intentional limits / next steps
+
+No follow-up is required for release. This remains an evidence recorder—not
+safety advice, diagnosis, or a warranty workflow. Browser print supplies PDF;
+private text links omit photos; factory billing registration remains necessary
+before the optional supporter checkout can complete.
+
+---
+
+# Prior repair handoff
 
 Work order: `bike-check-card-repair-1`
 Completed: 2026-08-28
