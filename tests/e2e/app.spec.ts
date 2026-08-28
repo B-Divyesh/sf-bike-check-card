@@ -43,6 +43,16 @@ test('has no serious accessibility violations on the home and editor screens', a
   }
 });
 
+test('puts the skip link first in keyboard order and moves focus to the field sheet', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('Tab');
+  const skipLink = page.getByRole('link', { name: 'Skip to main content' });
+  await expect(skipLink).toBeFocused();
+  await expect(skipLink).toBeVisible();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#main')).toBeFocused();
+});
+
 test('loads and keeps editing when offline after the first visit', async ({ page, context }) => {
   await page.goto('/?edit=1');
   await page.locator('#field-bike').fill('Offline tourer');

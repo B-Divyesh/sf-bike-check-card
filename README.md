@@ -24,6 +24,7 @@ Requires a current Node.js release.
 npm install
 npm run dev
 npm test
+npm run lint
 npm run build
 npm run test:e2e
 ```
@@ -38,7 +39,7 @@ The researched scope is in [`.factory/brief.json`](.factory/brief.json), the cas
 
 ## Deployment
 
-Publish the contents of `dist/` as a static site. The factory owns DNS, infrastructure, and registration of the Sociobot product slug; this repository does not provision them.
+Publish the contents of `dist/` as a static site. `staticwebapp.config.json` is included in the build for Azure Static Web Apps: content-hashed `/assets/*` receive one-year immutable caching, while HTML and `sw.js` revalidate so updates remain discoverable; it also declares the manifest media type and browser response policies. The factory owns DNS, infrastructure, and registration of the Sociobot product slug; this repository does not provision them.
 
 ## License
 
