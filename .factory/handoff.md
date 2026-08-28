@@ -1,87 +1,96 @@
-# Bike Check Card — verification handoff
+# Bike Check Card — repair handoff
 
-Work order: `bike-check-card-verify-1`
+Work order: `bike-check-card-repair-1`
+Completed: 2026-08-28
+Base verifier report: `c8429535b1f1e45f138eaba92478202c363c1332`
+Repair commit: `b28029a` (`fix: enforce static response policies`)
 
-Completed: 2026-08-27
+## Final result: PASS
 
-## Final result: FAIL (deployment release gate)
+The release-blocking deployment finding is repaired and deployed to
+<https://bike-check-card.sociobot.in>. The artifact remains a Vite + TypeScript,
+local-first PWA deployed as a static site. The researched scope and all
+previously passing evidence-card behavior were retained.
 
-Candidate: `6a31bffecd9818a4aff89b98ded12e5776e76b87`
-URL: <https://bike-check-card.sociobot.in>
+## Repairs
 
-The live product exactly matches the candidate build and the local-first bike
-fault-card workflow passes functional, offline, accessibility, privacy, mobile,
-and performance checks. Do not release until hosting gives hashed static assets
-long-lived immutable caching. Production currently serves every checked static
-asset with `Cache-Control: public, must-revalidate, max-age=30`, which violates
-the required PWA cache policy.
-
-See [verification.md](verification.md) for commands, exact evidence, live hash
-matches, end-to-end coverage, and severity-ranked defects.
-
-## Verification commands and outcome
-
-```sh
-npm ci
-npm test                 # 5/5 passed
-npm run build            # passed; includes tsc --noEmit and creates dist/
-npm run test:e2e         # 8/8 passed, desktop + Pixel 5
-```
-
-Lighthouse 13 against the local production preview: Performance 93,
-Accessibility 100, Best Practices 100, SEO 100 (FCP 0.9 s, LCP 2.4 s,
-TBT 230 ms, CLS 0). Initial JavaScript is 33.6 KB uncompressed / 11.5 KB gzip;
-CSS is 17.5 KB / 4.7 KB gzip; the mobile hero is 60.9 KB.
-
-## Required next steps
-
-1. Configure `/assets/*` content-hashed files for `max-age=31536000, immutable`.
-   Keep `index.html` and `sw.js` short-lived/revalidated for update discovery.
-2. Serve `/manifest.webmanifest` as `application/manifest+json; charset=utf-8`.
-3. Add CSP, clickjacking protection, Permissions-Policy, and a one-year HSTS
-   policy if `preload` is retained.
-
-## Builder handoff retained for product scope
-
-## What shipped
-
-- Responsive cassette-era workshop-zine landing page and field-sheet editor, built in strict vanilla TypeScript with Vite.
-- Local-first draft persistence and saved-card history in IndexedDB; last local write is visible through the “Saving…” / “Saved locally” state.
-- Bike, component, mileage, pressure, exact symptom, timeline, ride context, conditions, wheel-sensor/GPS comparison, observations, and rider-selected next step.
-- Six-photo evidence capture with browser-side resizing, captions, pointer/touch grease-pencil annotation, undo, clear, and preservation of the original image.
-- Completion checklist for bike, component, symptom, and one measurement.
-- Text-only private share links encoded in a URL fragment; photos deliberately remain local. Shared-card view includes the safety boundary and photo-omission notice.
-- Print stylesheet for browser “Save as PDF,” plus complete JSON backup/import so users own their data.
-- One live draft and one saved snapshot remain free. The optional $9 one-time Sociobot supporter unlock enables unlimited local saved-card history. Checkout, callback capture, daily cached verification, optimistic offline unlock, invalid-license notice, and paste-to-restore are implemented without a product ID.
-- Installable PWA manifest, 192/512/maskable original icons, a versioned service worker, cached offline shell, direct offline navigation fallback, update toast, and offline status strip.
-- Static `/privacy` and `/terms` entry points, plain-language legal copy, MIT license, full README, robots and sitemap files.
-- Original generated hero collage with prompt/provenance sidecars and a documented visual system. Production WebP variants are 60 KB (720 px) and 216 KB (1280 px).
+- Added `public/staticwebapp.config.json`, which is shipped with `dist/` and
+  consumed by Azure Static Web Apps.
+- Hashed `/assets/*` now use `Cache-Control: public, max-age=31536000,
+  immutable`; app-shell responses, including `/` and `/sw.js`, use `public,
+  max-age=0, must-revalidate` so updates remain discoverable.
+- `.webmanifest` now has `Content-Type: application/manifest+json;
+  charset=utf-8`.
+- Added a restrictive same-origin CSP, `X-Frame-Options: DENY`, restrictive
+  Permissions-Policy, `nosniff`, strict referrer policy, and one-year preload
+  HSTS.
+- Added exact regression tests for the deployment configuration and added a
+  keyboard test for the skip-link focus handoff. The test exposed that `<main>`
+  was not focusable after skip-link activation, so every routed main landmark
+  now has `tabindex="-1"` and the skip link focuses and scrolls it explicitly.
 
 ## Verification
 
-Run from a clean checkout:
+Clean install and local quality gates on 2026-08-28:
 
 ```sh
-npm install
-npm test
-npm run build
-npm run test:e2e
+npm ci                         # 61 packages; 0 vulnerabilities
+npm test                       # 7/7 passed (includes 2 response-policy regressions)
+npm run lint                   # tsc --noEmit passed
+npm run build                  # passed; dist/ created
+npx playwright test --workers=2 # 10/10 passed, Desktop Chromium + Pixel 5
+npm audit --omit=dev           # 0 vulnerabilities
 ```
 
-Results on 2026-08-27:
+- Browser coverage exercised the complete local draft flow, persisted fields,
+  photo markup, serious/critical axe checks on home/editor/privacy/terms,
+  Desktop and 390px layouts, keyboard skip-link behavior, service-worker
+  offline reload, and continued offline editing.
+- Live browser smoke test: HTTP 200 in 652 ms; zero page/console errors;
+  `lang=en`, one `h1`, a `main`, zero missing image alt attributes, and zero
+  unlabeled buttons. A live 390px session had zero horizontal overflow; the
+  skip link was first in tab order and moved focus to `main`; service-worker
+  control was active; offline reload retained `Live offline tourer`; observed
+  requests were only to `https://bike-check-card.sociobot.in`.
+- Lighthouse 13.4.1 on the live site: Performance 99, Accessibility 100, Best
+  Practices 100, SEO 100; FCP 1.0 s, LCP 2.1 s, TBT 10 ms, CLS 0.
+- Update behavior is unchanged from the independent verifier's controlled
+  service-worker update test. The current live browser session confirmed a
+  controlling service worker; the repair only changes response policy and the
+  keyboard focus handoff.
 
-- `npm test`: 5/5 Vitest tests passed.
-- `npm run build`: passed; output in `dist/` with root `index.html`, plus `privacy/index.html` and `terms/index.html`.
-- Initial production payload: 33.58 KB JavaScript and 17.50 KB CSS uncompressed (11.49 KB and 4.58 KB gzip); no font payload; mobile hero 60 KB.
-- Playwright 1.58.2: 8/8 checks passed across Pixel 5 and desktop Chromium. Covered draft persistence, form completion, image attachment/annotation, phone and desktop layouts, serious/critical axe checks, and `context.setOffline(true)` reload with continued editing.
-- Factory `verify-url.sh`: HTTP 200; no console/page errors; `lang=en`; exactly one `h1`; main landmark present; no missing image alt text; no unlabeled buttons.
-- Lighthouse 13 mobile: Performance 98, Accessibility 100, Best Practices 100, SEO 100. FCP 0.9 s, LCP 2.4 s, CLS 0, total blocking time 0 ms, interactive 2.4 s.
-- `npm audit`: 0 vulnerabilities.
+## Live deployment evidence
 
-## Known gaps and release steps
+Deployment used `/opt/fleet/lib/deploy-static.sh bike-check-card dist` and
+Azure Static Web Apps deployment `771d214d-ea48-4d5d-b70b-20c8e96f2fa3`.
 
-- The factory must register `bike-check-card` with the Sociobot billing engine and configure its return URL before checkout can complete in production. No provider or product ID is embedded here.
-- Browser print is the PDF implementation, so pagination controls depend on the browser. The dedicated print stylesheet retains form evidence and photos.
-- Photo links are intentionally not implemented: embedding images would create oversized URLs and uploading them would violate the local-photo constraint. Use print/PDF or JSON when photos must travel.
-- HEIC decoding depends on browser support; unsupported files produce an actionable local error.
-- No diagnosis, safety recommendation, warranty workflow, telemetry ingestion, cloud sync, analytics, or social feed is included, by design.
+| Resource | Content type | Cache-Control |
+| --- | --- | --- |
+| `/` | `text/html` | `public, max-age=0, must-revalidate` |
+| `/sw.js` | `text/javascript` | `public, max-age=0, must-revalidate` |
+| `/manifest.webmanifest` | `application/manifest+json; charset=utf-8` | `public, max-age=0, must-revalidate` |
+| `/assets/index-DBGM03TC.js` | `text/javascript` | `public, max-age=31536000, immutable` |
+| `/assets/index-kiKF1L1N.css` | `text/css` | `public, max-age=31536000, immutable` |
+| `/assets/hero-zine-720.webp` | `image/webp` | `public, max-age=31536000, immutable` |
+
+Live response also contains the configured CSP with `frame-ancestors 'none'`,
+`X-Frame-Options: DENY`, `Permissions-Policy: camera=(), geolocation=(),
+microphone=(), payment=(), usb=()`, and `Strict-Transport-Security:
+max-age=31536000; includeSubDomains; preload`.
+
+SHA-256 identity matched local `dist/` to production for `/`, `/sw.js`,
+`/manifest.webmanifest`, `/offline.html`, `/privacy`, `/terms`, both generated
+bundles, and both production WebP assets. Example final bundle identity:
+`/assets/index-DBGM03TC.js` =
+`1dcdbc152bf59f4fdbee37845c61a68da40a5198dbbf612a50184f75e4358455`.
+
+## Known product constraints
+
+- The factory must register `bike-check-card` with the Sociobot billing engine
+  and configure its return URL before checkout can complete in production. No
+  payment-provider code or product ID is embedded here.
+- Browser print is the PDF implementation, so page controls depend on the
+  browser. Photos intentionally remain out of share links; use print/PDF or
+  JSON backup when they must travel.
+- The app remains an evidence recorder, not a diagnosis, safety verdict,
+  warranty workflow, telemetry system, cloud sync product, or social feed.
