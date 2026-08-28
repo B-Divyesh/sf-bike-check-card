@@ -6,6 +6,8 @@ type StaticWebAppConfig = {
   globalHeaders: Record<string, string>;
   mimeTypes: Record<string, string>;
   routes: Array<{ route: string; headers?: Record<string, string> }>;
+  responseOverrides: Record<string, { rewrite: string }>;
+  navigationFallback?: unknown;
 };
 
 const config = JSON.parse(readFileSync(resolve(process.cwd(), 'public/staticwebapp.config.json'), 'utf8')) as StaticWebAppConfig;
@@ -25,5 +27,10 @@ describe('static deployment response policy', () => {
     expect(config.globalHeaders['X-Frame-Options']).toBe('DENY');
     expect(config.globalHeaders['Permissions-Policy']).toBe('camera=(), geolocation=(), microphone=(), payment=(), usb=()');
     expect(config.globalHeaders['Strict-Transport-Security']).toBe('max-age=31536000; includeSubDomains; preload');
+  });
+
+  it('uses direct route documents and a real not-found response', () => {
+    expect(config.navigationFallback).toBeUndefined();
+    expect(config.responseOverrides['404']).toEqual({ rewrite: '/404.html' });
   });
 });

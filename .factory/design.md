@@ -61,6 +61,8 @@ The hero is a generated still-life collage: a bicycle wheel rim, pocket pressure
 
 Generated imagery is original to this product. Generation model: factory image deployment (`factory-image`, Azure OpenAI image generation), generated 2026-08-27. Production derivatives are optimized locally to WebP/AVIF and kept below the 300 KB mobile hero budget. Prompt sidecar lives beside the source asset.
 
+The 1200 × 630 social preview and 640 × 480 marked demo photo were composed on 2026-08-28 from that original hero source. ImageMagick made the crops, zine label, and red grease-pencil mark. They introduce no third-party artwork.
+
 ## Accessibility and print
 
 At 390px the decorative hero compresses below the primary copy and the editor becomes a single column. Desktop retains a narrow completion rail; phone keeps actions in document order with no fixed bar. All controls are at least 44px high, keyboard focus is explicit, and annotation has a text caption fallback. Print removes navigation and actions, retains the evidence/photos and safety boundary, and uses black on white to make a dependable PDF.

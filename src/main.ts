@@ -1,8 +1,8 @@
 import './styles.css';
 import { completion, isShareReady, newCard, type CheckCard, type PhotoEvidence, type SharedCard } from './model';
-import { deleteHistory, listHistory, loadDraft, replaceDraft, saveDraft, saveHistory } from './db';
+import { deleteHistory, listHistory, loadDraft, replaceDraft, saveDraft, saveHistory, type StorageMode } from './db';
+import { sampleCard } from './demo';
 import { decodeCard, makeShareUrl } from './share';
-import { captureLicenseFromUrl, checkoutUrl, hasOptimisticUnlock, hasStoredLicense, storeLicense, verifyLicense } from './license';
 
 const app = document.querySelector<HTMLDivElement>('#app') as HTMLDivElement;
 if (!app) throw new Error('App root is missing.');
@@ -15,8 +15,8 @@ document.querySelector<HTMLAnchorElement>('.skip-link')?.addEventListener('click
 });
 
 let draft: CheckCard | null = null;
-let unlocked = hasOptimisticUnlock();
-let licenseInactive = hasStoredLicense() && !unlocked;
+let storageMode: StorageMode = 'real';
+let firstRender = true;
 let saveTimer = 0;
 
 const esc = (value: unknown) => String(value ?? '').replace(/[&<>'"]/g, character => ({
@@ -26,9 +26,9 @@ const esc = (value: unknown) => String(value ?? '').replace(/[&<>'"]/g, characte
 const selected = (actual: string, value: string) => actual === value ? ' selected' : '';
 
 function navigate(href: string) {
-  history.pushState({}, '', href);
-  void renderRoute();
-  scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  history.replaceState({ ...history.state, scrollY: window.scrollY }, '');
+  history.pushState({ scrollY: 0 }, '', href);
+  void renderRoute(true, 0);
 }
 
 function shell(content: string, active = '') {
@@ -38,19 +38,21 @@ function shell(content: string, active = '') {
         <span class="brand-mark" aria-hidden="true">/</span><span>Bike Check Card</span>
       </a>
       <nav aria-label="Primary">
-        <a href="/?edit=1" data-nav${active === 'edit' ? ' aria-current="page"' : ''}>Draft</a>
-        <a href="/?view=history" data-nav${active === 'history' ? ' aria-current="page"' : ''}>My cards</a>
-        <a href="/?view=pro" data-nav${active === 'pro' ? ' aria-current="page"' : ''}>${unlocked ? 'Supporter ✓' : 'Unlock'}</a>
+        <a href="/demo" data-nav${active === 'demo' ? ' aria-current="page"' : ''}>Try demo</a>
+        <a href="/card" data-nav${active === 'edit' ? ' aria-current="page"' : ''}>Open draft</a>
+        <a href="/cards" data-nav${active === 'history' ? ' aria-current="page"' : ''}>Saved cards</a>
+        <a href="/privacy" data-nav${active === 'privacy' ? ' aria-current="page"' : ''}>Privacy</a>
       </nav>
     </header>
-    <div class="offline-strip" id="offline-strip" role="status" ${navigator.onLine ? 'hidden' : ''}>Offline — your draft still saves on this device.</div>
-    ${licenseInactive ? `<div class="license-strip" role="status">License no longer active. <a href="/?view=pro" data-nav>Review the supporter unlock</a>.</div>` : ''}
+    <div class="offline-strip" id="offline-strip" role="status" ${navigator.onLine ? 'hidden' : ''}>Offline — your card still works on this device.</div>
+    ${storageMode === 'demo' ? `<aside class="demo-strip" aria-label="Demo controls"><strong>Demo — sample data, nothing is saved</strong><span>Changes stay in a separate demo workspace.</span><div><button type="button" id="reset-demo">Reset demo</button><a href="/card" data-start-real>Start for real</a></div></aside>` : ''}
     ${content}
     <footer>
-      <p>Made for clear handoffs, not safety verdicts. <span aria-hidden="true">●</span> Works offline.</p>
+      <p>Record bike-fault evidence for a mechanic or cycling community.</p>
       <nav aria-label="Legal"><a href="/privacy" data-nav>Privacy</a><a href="/terms" data-nav>Terms</a></nav>
-      <p class="generated-note">Hero artwork was generated for this product; no stock imagery or tracking scripts.</p>
+      <p class="generated-note">Built by Param Factory · v1.1.0 · polish-1 · Original generated artwork.</p>
     </footer>
+    <div class="visually-hidden" id="route-announcer" role="status" aria-live="polite" aria-atomic="true"></div>
     <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>`;
 }
 
@@ -68,39 +70,42 @@ function homeTemplate(savedCount: number) {
     <main id="main" tabindex="-1">
       <section class="hero">
         <div class="hero-copy">
-          <p class="kicker"><span>Offline field sheet</span> / No account</p>
-          <h1>Catch the fault <br><em>before</em> it disappears.</h1>
-          <p class="lede">Record the bike, exact symptom, measurements, ride context and marked-up photos in one check card—ready for a mechanic or community reply.</p>
+          <p class="kicker"><span>Bike fault record</span></p>
+          <h1>Record bike-fault evidence</h1>
+          <p class="lede">For cyclists who need a clear record before asking a mechanic or cycling community for help.</p>
           <div class="hero-actions">
-            <a class="button button-primary" href="/?edit=1" data-nav>Start a check card <span aria-hidden="true">→</span></a>
-            ${savedCount ? `<a class="text-link" href="/?view=history" data-nav>Open ${savedCount} saved ${savedCount === 1 ? 'card' : 'cards'}</a>` : '<span class="local-note">Saves locally as you type</span>'}
+            <a class="button button-primary" href="/demo" data-nav>Try it with sample data <span aria-hidden="true">→</span></a>
+            <span class="local-note">See a completed check card first.</span>
           </div>
+          <a class="text-link real-start" href="/card" data-nav>Start a blank card</a>
+          <ul class="hero-facts" aria-label="Product facts"><li>No account</li><li>Saved on this device</li><li>Free to use</li></ul>
+          ${savedCount ? `<a class="text-link saved-link" href="/cards" data-nav>Open ${savedCount} saved ${savedCount === 1 ? 'card' : 'cards'}</a>` : ''}
         </div>
         <figure class="hero-art">
           <picture>
             <source srcset="/assets/hero-zine-720.webp 720w, /assets/hero-zine-1280.webp 1280w" sizes="(max-width: 800px) 100vw, 46vw" type="image/webp">
             <img src="/assets/hero-zine-1280.webp" alt="Zine-style workbench with a bicycle wheel, pressure gauge, fault photos and a marked evidence sheet" width="1280" height="853" fetchpriority="high" decoding="async">
           </picture>
-          <figcaption>Evidence kit, assembled. Original generated collage.</figcaption>
+          <figcaption>Original artwork for Bike Check Card.</figcaption>
         </figure>
       </section>
       <section class="workflow" aria-labelledby="workflow-title">
-        <div><p class="section-number">01—04</p><h2 id="workflow-title">Four moves. One useful handoff.</h2></div>
+        <div><p class="section-number">01—04</p><h2 id="workflow-title">How to make a check card</h2></div>
         <ol class="steps">
-          <li><span>01</span><strong>Name it</strong><p>Bike and exact component.</p></li>
-          <li><span>02</span><strong>Describe it</strong><p>What happened, when, and under what load.</p></li>
-          <li><span>03</span><strong>Measure it</strong><p>Pressure, distance, wheel and GPS readings.</p></li>
-          <li><span>04</span><strong>Mark it</strong><p>Circle the evidence directly on your photos.</p></li>
+          <li><span>01</span><strong>Add bike and component</strong><p>Name the bike and exact part.</p></li>
+          <li><span>02</span><strong>Describe the symptom</strong><p>Record what happened and when.</p></li>
+          <li><span>03</span><strong>Add measurements</strong><p>Record pressure, distance, wheel, or GPS readings.</p></li>
+          <li><span>04</span><strong>Mark photos</strong><p>Circle the evidence on a photo.</p></li>
         </ol>
       </section>
       <aside class="safety-boundary" aria-labelledby="boundary-title">
         <span class="boundary-mark" aria-hidden="true">!</span>
-        <div><h2 id="boundary-title">A record, not a green light.</h2><p>Bike Check Card does not diagnose faults or tell you a bike is safe to ride. If you are unsure, pause and ask a qualified mechanic.</p></div>
+        <div><h2 id="boundary-title">This card is not safety advice</h2><p>It records evidence. It does not diagnose faults or tell you a bike is safe to ride.</p><p>If you are unsure, pause and ask a qualified mechanic.</p></div>
       </aside>
       <section class="privacy-promise" aria-labelledby="private-title">
-        <p class="tape">Private by construction</p>
-        <h2 id="private-title">Your photos stay in your pocket.</h2>
-        <p>Everything lives on this device until you choose an export. Text links use the URL fragment, which is not sent to our server, and deliberately leave photos out.</p>
+        <p class="tape">Your data and photos</p>
+        <h2 id="private-title">Photos stay on this device</h2>
+        <p>Your card stays in this browser until you export it.</p><p>Shared text links leave photos out.</p>
       </section>
     </main>`);
 }
@@ -129,7 +134,7 @@ function editorTemplate(card: CheckCard) {
   return shell(`
     <main id="main" tabindex="-1" class="editor-main">
       <div class="editor-heading">
-        <div><p class="kicker">Field sheet / <span id="save-state">Saved locally</span></p><h1>Build a check card.</h1><p>Required for a useful handoff: bike, component, symptom and one measurement.</p></div>
+        <div><p class="kicker">Check card / <span id="save-state">${storageMode === 'demo' ? 'Demo changes stay separate' : 'Saved on this device'}</span></p><h1>Record bike-fault evidence</h1><p>Add the bike, component, symptom, and one measurement before sharing.</p></div>
         <aside class="completion" aria-label="Card completeness"><strong><span id="complete-count">${done.complete}</span> / ${done.total}</strong><span>essentials captured</span><ul id="completion-list">${labels.map((label, index) => `<li class="${done.checks[index] ? 'done' : ''}">${done.checks[index] ? '✓' : '○'} ${label}</li>`).join('')}</ul></aside>
       </div>
       <form id="card-form" novalidate>
@@ -166,7 +171,7 @@ function editorTemplate(card: CheckCard) {
         </div>
       </form>
       <dialog id="annotator" aria-labelledby="annotator-title"><div class="dialog-head"><div><p class="kicker">Grease pencil</p><h2 id="annotator-title">Mark the evidence</h2></div><button type="button" class="icon-button" id="close-annotator" aria-label="Close photo marker">×</button></div><p>Draw a red circle or arrow around the fault. Your original stays untouched.</p><div class="canvas-wrap"><canvas id="annotation-canvas"></canvas></div><div class="dialog-actions"><button type="button" class="button button-quiet" id="undo-mark">Undo</button><button type="button" class="button button-quiet" id="clear-mark">Clear marks</button><button type="button" class="button button-primary" id="save-mark">Save marked photo</button></div></dialog>
-    </main>`, 'edit');
+    </main>`, storageMode === 'demo' ? 'demo' : 'edit');
 }
 
 function dataRows(card: CheckCard | SharedCard) {
@@ -179,48 +184,99 @@ function dataRows(card: CheckCard | SharedCard) {
 }
 
 function sharedTemplate(card: SharedCard) {
-  return shell(`<main id="main" tabindex="-1" class="shared-main"><article class="print-card"><header><p class="kicker">Shared evidence card</p><h1>${esc(card.title || `${card.component || 'Bike'} check`)}</h1><p class="card-date">Updated ${new Date(card.updatedAt).toLocaleString()}</p></header><section aria-labelledby="reported-symptom"><h2 id="reported-symptom">Reported symptom</h2><p class="symptom-callout">${esc(card.symptom)}</p></section><dl class="evidence-list">${dataRows(card)}</dl>${card.photoCount ? `<p class="photo-omission"><strong>${card.photoCount} local ${card.photoCount === 1 ? 'photo was' : 'photos were'} not included.</strong> Ask the sender for the PDF or image export if needed.</p>` : ''}<aside class="safety-boundary compact"><span class="boundary-mark" aria-hidden="true">!</span><div><h2>Evidence, not a safety verdict</h2><p>This card documents what the rider observed. It does not diagnose the fault or confirm the bike is safe to ride.</p></div></aside><div class="shared-actions"><button type="button" class="button button-secondary" id="print-card">Print / save PDF</button><a class="button button-primary" href="/?edit=1" data-nav>Make my own card</a></div></article></main>`);
+  return shell(`<main id="main" tabindex="-1" class="shared-main"><article class="print-card"><header><p class="kicker">Shared evidence card</p><h1>${esc(card.title || `${card.component || 'Bike'} check`)}</h1><p class="card-date">Updated ${new Date(card.updatedAt).toLocaleString()}</p></header><section aria-labelledby="reported-symptom"><h2 id="reported-symptom">Reported symptom</h2><p class="symptom-callout">${esc(card.symptom)}</p></section><dl class="evidence-list">${dataRows(card)}</dl>${card.photoCount ? `<p class="photo-omission"><strong>${card.photoCount} local ${card.photoCount === 1 ? 'photo was' : 'photos were'} not included.</strong> Ask the sender for the printed card or JSON backup if needed.</p>` : ''}<aside class="safety-boundary compact"><span class="boundary-mark" aria-hidden="true">!</span><div><h2>Evidence, not a safety verdict</h2><p>This card documents what the rider observed. It does not diagnose the fault or confirm the bike is safe to ride.</p></div></aside><div class="shared-actions"><button type="button" class="button button-secondary" id="print-card">Print card</button><a class="button button-primary" href="/card" data-nav>Make my own card</a></div></article></main>`);
 }
 
 function invalidShareTemplate(message: string) {
   return shell(`<main id="main" tabindex="-1" class="message-page"><p class="stamp stamp-danger">Link error</p><h1>This card could not be opened.</h1><p>${esc(message)}</p><a class="button button-primary" href="/" data-nav>Go to Bike Check Card</a></main>`);
 }
 
-async function historyTemplate() {
-  const cards = await listHistory();
-  return shell(`<main id="main" tabindex="-1" class="list-main"><div class="page-heading"><p class="kicker">Local archive</p><h1>My check cards.</h1><p>Stored only in this browser. Export a backup before clearing site data or changing devices.</p></div>${cards.length ? `<ul class="history-list">${cards.map(card => `<li><div><p class="stamp">${esc(card.component || 'Unsorted')}</p><h2>${esc(card.title || card.bike || 'Untitled bike check')}</h2><p>${esc(card.symptom || 'No symptom recorded')}</p><small>Saved ${new Date(card.updatedAt).toLocaleString()} · ${completion(card).complete}/4 essentials</small></div><div class="history-actions"><button class="button button-secondary" type="button" data-open-card="${esc(card.id)}">Open copy</button><button class="button button-quiet" type="button" data-delete-card="${esc(card.id)}">Delete</button></div></li>`).join('')}</ul>` : `<section class="empty-state"><span aria-hidden="true">○</span><h2>No saved cards yet.</h2><p>Your live draft saves automatically. Save a snapshot when it is ready to keep.</p><a class="button button-primary" href="/?edit=1" data-nav>Start a check card</a></section>`}</main>`, 'history');
+function notFoundTemplate() {
+  return shell(`<main id="main" tabindex="-1" class="message-page"><p class="stamp stamp-danger">404 / Missing page</p><h1>This page is not on the workbench</h1><p>The address may be wrong, or the page may have moved.</p><a class="button button-primary" href="/" data-nav>Return home</a></main>`);
 }
 
-function proTemplate() {
-  return shell(`<main id="main" tabindex="-1" class="pro-main"><div class="page-heading"><p class="kicker">One-time supporter unlock</p><h1>Keep the workshop light on.</h1><p>The complete check-card workflow stays free. A one-time <strong>$9 USD</strong> purchase unlocks unlimited saved-card history on this device and supports the privacy-first utility.</p></div><section class="price-sheet"><div><p class="stamp ${unlocked ? 'stamp-success' : ''}">${unlocked ? 'Unlocked' : 'Supporter edition'}</p><h2>${unlocked ? 'Thanks for backing useful tools.' : '$9 once. No subscription.'}</h2><ul><li>Unlimited saved card snapshots</li><li>Move the license between your devices</li><li>Core link, PDF and data exports remain free</li></ul>${unlocked ? '<p>Your cached license is active on this device.</p>' : `<a class="button button-primary" href="${checkoutUrl()}">Buy supporter unlock</a><p class="fine-print">Secure hosted checkout. Sociobot / Dodo is the merchant of record; refunds are handled there and revoke the license.</p>`}</div><form id="restore-form"><h2>Have a license?</h2><label class="field" for="license-token"><span>Paste license token</span><input id="license-token" name="license" autocomplete="off" spellcheck="false" required></label><button class="button button-secondary" type="submit">Verify and restore</button><p id="license-status" role="status"></p></form></section></main>`, 'pro');
+async function historyTemplate() {
+  const cards = await listHistory('real');
+  return shell(`<main id="main" tabindex="-1" class="list-main"><div class="page-heading"><p class="kicker">Saved on this device</p><h1>Saved check cards</h1><p>Export a backup before clearing browser data or changing devices.</p></div>${cards.length ? `<ul class="history-list">${cards.map(card => `<li><div><p class="stamp">${esc(card.component || 'Unsorted')}</p><h2>${esc(card.title || card.bike || 'Untitled bike check')}</h2><p>${esc(card.symptom || 'No symptom recorded')}</p><small>Saved ${new Date(card.updatedAt).toLocaleString()} · ${completion(card).complete}/4 essentials</small></div><div class="history-actions"><button class="button button-secondary" type="button" data-open-card="${esc(card.id)}">Open copy</button><button class="button button-quiet" type="button" data-delete-card="${esc(card.id)}">Delete card</button></div></li>`).join('')}</ul>` : `<section class="empty-state"><span aria-hidden="true">○</span><h2>No saved cards yet</h2><p>Save a copy of your draft when you want to keep it here.</p><a class="button button-primary" href="/card" data-nav>Open draft</a></section>`}</main>`, 'history');
 }
 
 function privacyTemplate() {
-  return shell(`<main id="main" tabindex="-1" class="legal-main"><p class="kicker">Effective 27 August 2026</p><h1>Privacy, in plain language.</h1><h2>Your bike data stays local</h2><p>Drafts, saved cards, measurements, notes and photos are stored in your browser’s IndexedDB. We do not receive them. Removing site data removes these records, so export a backup first.</p><h2>Exports are your choice</h2><p>A private link encodes text in the URL fragment and excludes photos. Fragments are not sent to our server, but anyone you give the link to can read it. Print/PDF and JSON exports are created on your device and may include photos.</p><h2>Payments and licenses</h2><p>If you buy the supporter unlock, checkout is hosted by Sociobot with Dodo as merchant of record. This app stores your license token locally and sends it to the Sociobot verification endpoint at most once per day. We do not add analytics, advertising cookies or third-party fonts.</p><h2>Questions</h2><p>Contact <a href="mailto:privacy@sociobot.in">privacy@sociobot.in</a>. This policy may change when the service changes; the date above identifies this version.</p></main>`);
+  return shell(`<main id="main" tabindex="-1" class="legal-main"><p class="kicker">Effective 28 August 2026</p><h1>Privacy</h1><h2>Your bike data stays in this browser</h2><p>Drafts, saved cards, measurements, notes, and photos use browser storage. Bike Check Card does not receive them.</p><p>Clearing site data removes these records. Export a backup first.</p><h2>Demo data stays separate</h2><p>The demo uses its own browser database. It never reads or changes your real draft or saved cards.</p><h2>You choose when to export</h2><p>A shared text link excludes photos. Its card data follows the # symbol and is not sent in a page request.</p><p>Anyone with that link can read its text. Printed cards and JSON backups may include photos.</p><h2>No tracking</h2><p>The app loads no analytics, advertising cookies, remote fonts, or tracking scripts.</p><h2>Questions</h2><p>Email <a href="mailto:privacy@sociobot.in">privacy@sociobot.in</a>.</p></main>`, 'privacy');
 }
 
 function termsTemplate() {
-  return shell(`<main id="main" tabindex="-1" class="legal-main"><p class="kicker">Effective 27 August 2026</p><h1>Terms of use.</h1><h2>Evidence tool, not professional advice</h2><p>Bike Check Card helps you record observations. It does not inspect your bicycle, diagnose faults, recommend replacement, confirm warranty eligibility, or determine whether riding is safe. Stop riding and consult a qualified mechanic whenever you are uncertain.</p><h2>Your records</h2><p>You are responsible for the accuracy of your records, your exports, and who receives a shared link. Do not rely on browser storage as your only long-term copy.</p><h2>Supporter purchase</h2><p>The supporter unlock is a one-time $9 USD purchase, subject to the price shown at checkout. It unlocks unlimited local saved-card history. Sociobot / Dodo is the merchant of record and handles payment and refunds; a refund revokes the license.</p><h2>Availability and warranty</h2><p>The software is provided “as is” under the MIT License. Offline behavior depends on a successful first load and browser support. We may improve or discontinue the hosted app, but JSON export remains available in the app.</p></main>`);
+  return shell(`<main id="main" tabindex="-1" class="legal-main"><p class="kicker">Effective 28 August 2026</p><h1>Terms</h1><h2>This is an evidence tool</h2><p>Bike Check Card records your observations. It does not inspect your bicycle or diagnose faults.</p><p>It does not recommend replacement, confirm warranty eligibility, or determine whether riding is safe.</p><p>Stop riding and ask a qualified mechanic whenever you are uncertain.</p><h2>You control your records</h2><p>You are responsible for your records, exports, and shared links. Keep a backup outside browser storage.</p><h2>Availability and warranty</h2><p>The software is provided “as is” under the MIT License.</p><p>Offline use needs one successful online visit and a supported browser.</p></main>`);
 }
 
-async function renderRoute() {
+type RouteMeta = { title: string; description: string; canonical: string };
+
+function setMetadata(meta: RouteMeta) {
+  document.title = meta.title;
+  const absolute = new URL(meta.canonical, location.origin).href;
+  const values: Record<string, string> = {
+    'meta[name="description"]': meta.description,
+    'meta[property="og:title"]': meta.title,
+    'meta[property="og:description"]': meta.description,
+    'meta[property="og:url"]': absolute,
+    'meta[name="twitter:title"]': meta.title,
+    'meta[name="twitter:description"]': meta.description
+  };
+  Object.entries(values).forEach(([selector, value]) => document.querySelector<HTMLMetaElement>(selector)?.setAttribute('content', value));
+  document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.setAttribute('href', absolute);
+}
+
+function finishRoute(meta: RouteMeta, focusHeading: boolean, scrollY: number) {
+  setMetadata(meta);
+  bindPageActions();
+  const heading = document.querySelector<HTMLHeadingElement>('h1');
+  if (heading) {
+    heading.tabIndex = -1;
+    document.querySelector('#route-announcer')!.textContent = heading.textContent ?? '';
+    if (focusHeading) heading.focus({ preventScroll: true });
+  }
+  window.scrollTo({ top: scrollY, behavior: 'auto' });
+  firstRender = false;
+}
+
+async function renderRoute(focusHeading = !firstRender, scrollY = 0) {
   const url = new URL(location.href);
   const shared = location.hash.startsWith('#card=') ? location.hash.slice(6) : '';
+  const requestedMode: StorageMode = url.pathname === '/demo' || url.searchParams.get('demo') === '1' ? 'demo' : 'real';
+  if (requestedMode !== storageMode) draft = null;
+  storageMode = requestedMode;
+  let meta: RouteMeta;
   if (shared) {
     try { app.innerHTML = sharedTemplate(decodeCard(shared)); } catch (error) { app.innerHTML = invalidShareTemplate(error instanceof Error ? error.message : 'The link is invalid.'); }
-  } else if (url.pathname === '/privacy') app.innerHTML = privacyTemplate();
-  else if (url.pathname === '/terms') app.innerHTML = termsTemplate();
-  else if (url.pathname !== '/') app.innerHTML = invalidShareTemplate('This page does not exist.');
-  else if (url.searchParams.get('edit') === '1') {
-    draft = draft ?? await loadDraft() ?? newCard();
-    await saveDraft(draft);
+    meta = { title: 'Shared card — Bike Check Card', description: 'Read a cyclist’s shared bike-fault evidence.', canonical: '/' };
+  } else if (url.pathname === '/privacy') {
+    app.innerHTML = privacyTemplate();
+    meta = { title: 'Privacy — Bike Check Card', description: 'How Bike Check Card stores drafts, photos, demo data, and exports in your browser.', canonical: '/privacy' };
+  } else if (url.pathname === '/terms') {
+    app.innerHTML = termsTemplate();
+    meta = { title: 'Terms — Bike Check Card', description: 'Terms for using Bike Check Card as an evidence record, not safety advice.', canonical: '/terms' };
+  } else if (requestedMode === 'demo') {
+    draft = draft ?? await loadDraft('demo') ?? sampleCard();
+    await saveDraft(draft, 'demo');
     app.innerHTML = editorTemplate(draft);
     bindEditor();
-  } else if (url.searchParams.get('view') === 'history') app.innerHTML = await historyTemplate();
-  else if (url.searchParams.get('view') === 'pro') { app.innerHTML = proTemplate(); bindRestore(); }
-  else app.innerHTML = homeTemplate((await listHistory()).length);
-  document.title = document.querySelector('h1')?.textContent?.trim() ? `${document.querySelector('h1')?.textContent?.trim()} — Bike Check Card` : 'Bike Check Card';
-  bindPageActions();
+    meta = { title: 'Demo — Bike Check Card', description: 'Try a completed bike-fault record in a separate sample workspace.', canonical: '/demo' };
+  } else if (url.pathname === '/card' || (url.pathname === '/' && url.searchParams.get('edit') === '1')) {
+    draft = draft ?? await loadDraft('real') ?? newCard();
+    await saveDraft(draft, 'real');
+    app.innerHTML = editorTemplate(draft);
+    bindEditor();
+    meta = { title: 'Check card — Bike Check Card', description: 'Record a bike fault with symptoms, measurements, context, and marked photos.', canonical: '/card' };
+  } else if (url.pathname === '/cards' || (url.pathname === '/' && url.searchParams.get('view') === 'history')) {
+    app.innerHTML = await historyTemplate();
+    meta = { title: 'Saved cards — Bike Check Card', description: 'Open bike check cards saved in this browser.', canonical: '/cards' };
+  } else if (url.pathname === '/') {
+    app.innerHTML = homeTemplate((await listHistory('real')).length);
+    meta = { title: 'Bike Check Card — record bike-fault evidence', description: 'For cyclists who need a clear fault record before asking a mechanic or cycling community for help.', canonical: '/' };
+  } else {
+    app.innerHTML = notFoundTemplate();
+    meta = { title: 'Page not found — Bike Check Card', description: 'This Bike Check Card page could not be found.', canonical: url.pathname };
+  }
+  finishRoute(meta, focusHeading, scrollY);
 }
 
 function updateCompletion() {
@@ -240,7 +296,7 @@ function queueSave() {
   saveTimer = window.setTimeout(async () => {
     if (!draft) return;
     draft.updatedAt = new Date().toISOString();
-    try { await saveDraft(draft); if (state) state.textContent = 'Saved locally'; }
+    try { await saveDraft(draft, storageMode); if (state) state.textContent = storageMode === 'demo' ? 'Demo changes stay separate' : 'Saved on this device'; }
     catch { if (state) state.textContent = 'Save failed — export a backup'; }
   }, 250);
 }
@@ -297,9 +353,8 @@ async function addPhotos(files: FileList | null) {
   if (error) error.textContent = '';
   try {
     for (const file of Array.from(files)) draft.photos.push({ id: crypto.randomUUID(), dataUrl: await imageToDataUrl(file), caption: '' });
-    await saveDraft(draft);
-    app.innerHTML = editorTemplate(draft);
-    bindEditor();
+    await saveDraft(draft, storageMode);
+    await renderRoute(false, window.scrollY);
     showToast(`${files.length} ${files.length === 1 ? 'photo' : 'photos'} added locally.`);
   } catch (problem) { if (error) error.textContent = problem instanceof Error ? problem.message : 'This photo could not be added.'; }
 }
@@ -309,9 +364,8 @@ async function removePhoto(id: string) {
   const photo = draft.photos.find(item => item.id === id);
   if (!photo || !confirm(`Remove ${photo.caption || 'this photo'} from the card?`)) return;
   draft.photos = draft.photos.filter(item => item.id !== id);
-  await saveDraft(draft);
-  app.innerHTML = editorTemplate(draft);
-  bindEditor();
+  await saveDraft(draft, storageMode);
+  await renderRoute(false, window.scrollY);
   showToast('Photo removed.');
 }
 
@@ -366,10 +420,9 @@ function openAnnotator(id: string) {
   });
   document.querySelector('#save-mark')?.addEventListener('click', async () => {
     photo.annotatedDataUrl = canvas.toDataURL('image/webp', 0.82);
-    await saveDraft(draft!);
+    await saveDraft(draft!, storageMode);
     dialog.close();
-    app.innerHTML = editorTemplate(draft!);
-    bindEditor();
+    await renderRoute(false, window.scrollY);
     showToast('Marked photo saved.');
   });
 }
@@ -388,21 +441,15 @@ async function shareDraft() {
 async function snapshotDraft() {
   if (!draft) return;
   setActionError('');
-  const cards = await listHistory();
-  if (!unlocked && cards.length >= 1) {
-    setActionError('The free edition keeps one saved snapshot. Export a backup, delete the saved card, or unlock unlimited history.');
-    return;
-  }
-  await saveHistory(draft);
-  showToast('Snapshot saved to My cards.');
+  await saveHistory(draft, storageMode);
+  showToast(storageMode === 'demo' ? 'Copy saved in the separate demo workspace.' : 'Copy saved to Saved cards.');
 }
 
 async function startBlankCard() {
   if (!confirm('Start a blank card? Save or export this draft first if you need to keep it.')) return;
   draft = newCard();
-  await replaceDraft(draft);
-  app.innerHTML = editorTemplate(draft);
-  bindEditor();
+  await replaceDraft(draft, storageMode);
+  await renderRoute(false, 0);
   showToast('Blank check card ready.');
 }
 
@@ -426,41 +473,38 @@ async function importBackup(file?: File) {
     draft = parsed.card;
     draft.id = crypto.randomUUID();
     draft.updatedAt = new Date().toISOString();
-    await replaceDraft(draft);
-    app.innerHTML = editorTemplate(draft);
-    bindEditor();
+    await replaceDraft(draft, storageMode);
+    await renderRoute(false, 0);
     showToast('Backup imported into the live draft.');
   } catch (error) { setActionError(error instanceof Error ? error.message : 'The backup could not be read.'); }
 }
 
-function bindRestore() {
-  document.querySelector<HTMLFormElement>('#restore-form')?.addEventListener('submit', async event => {
-    event.preventDefault();
-    const input = document.querySelector<HTMLInputElement>('#license-token');
-    const status = document.querySelector('#license-status');
-    if (!input?.value.trim() || !status) return;
-    status.textContent = 'Checking license…';
-    storeLicense(input.value);
-    unlocked = await verifyLicense();
-    status.textContent = unlocked ? 'License restored. Unlimited history is active.' : 'That license is not active for Bike Check Card.';
-    if (unlocked) window.setTimeout(() => void renderRoute(), 800);
-  });
-}
-
 function bindPageActions() {
   document.querySelector('#print-card')?.addEventListener('click', () => window.print());
+  document.querySelector('#reset-demo')?.addEventListener('click', async () => {
+    draft = sampleCard();
+    await replaceDraft(draft, 'demo');
+    await renderRoute(false, 0);
+    showToast('Demo reset to the original sample.');
+  });
+  document.querySelector<HTMLAnchorElement>('[data-start-real]')?.addEventListener('click', event => {
+    event.preventDefault();
+    draft = null;
+    storageMode = 'real';
+    navigate('/card');
+  });
   document.querySelectorAll<HTMLAnchorElement>('a[data-nav]').forEach(link => link.addEventListener('click', event => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault(); navigate(link.getAttribute('href') ?? '/');
   }));
   document.querySelectorAll<HTMLButtonElement>('[data-open-card]').forEach(button => button.addEventListener('click', async () => {
-    const card = (await listHistory()).find(item => item.id === button.dataset.openCard);
+    const card = (await listHistory('real')).find(item => item.id === button.dataset.openCard);
     if (!card || !confirm('Open a copy of this saved card as the live draft?')) return;
-    draft = structuredClone(card); draft.id = crypto.randomUUID(); draft.updatedAt = new Date().toISOString(); await replaceDraft(draft); navigate('/?edit=1');
+    draft = structuredClone(card); draft.id = crypto.randomUUID(); draft.updatedAt = new Date().toISOString(); await replaceDraft(draft, 'real'); navigate('/card');
   }));
   document.querySelectorAll<HTMLButtonElement>('[data-delete-card]').forEach(button => button.addEventListener('click', async () => {
     if (!confirm('Permanently delete this saved card from this device?')) return;
-    await deleteHistory(button.dataset.deleteCard ?? ''); await renderRoute(); showToast('Saved card deleted.');
+    await deleteHistory(button.dataset.deleteCard ?? '', 'real'); await renderRoute(false, window.scrollY); showToast('Saved card deleted.');
   }));
 }
 
@@ -476,16 +520,10 @@ function registerPwa() {
   }).catch(() => { /* App remains usable without install support. */ });
 }
 
-window.addEventListener('popstate', () => void renderRoute());
-window.addEventListener('hashchange', () => void renderRoute());
+window.addEventListener('popstate', event => void renderRoute(true, Number(event.state?.scrollY ?? 0)));
+window.addEventListener('hashchange', () => void renderRoute(true, 0));
 window.addEventListener('online', () => { document.querySelector('#offline-strip')?.setAttribute('hidden', ''); showToast('Back online. Your local draft is unchanged.'); });
 window.addEventListener('offline', () => document.querySelector('#offline-strip')?.removeAttribute('hidden'));
 
-captureLicenseFromUrl();
-unlocked = hasOptimisticUnlock();
 void renderRoute();
-void verifyLicense().then(valid => {
-  licenseInactive = hasStoredLicense() && !valid;
-  if (valid !== unlocked) { unlocked = valid; void renderRoute(); }
-});
 registerPwa();

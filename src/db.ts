@@ -1,12 +1,17 @@
 import type { CheckCard } from './model';
 
-const DB_NAME = 'bike-check-card';
+export type StorageMode = 'real' | 'demo';
+
+const DB_NAMES: Record<StorageMode, string> = {
+  real: 'bike-check-card',
+  demo: 'demo:bike-check-card'
+};
 const DB_VERSION = 1;
 const DRAFT_KEY = 'current';
 
-function openDatabase(): Promise<IDBDatabase> {
+function openDatabase(mode: StorageMode): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    const request = indexedDB.open(DB_NAMES[mode], DB_VERSION);
     request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains('drafts')) db.createObjectStore('drafts');
@@ -24,13 +29,13 @@ function requestResult<T>(request: IDBRequest<T>): Promise<T> {
   });
 }
 
-export async function loadDraft() {
-  const db = await openDatabase();
+export async function loadDraft(mode: StorageMode = 'real') {
+  const db = await openDatabase(mode);
   return requestResult<CheckCard | undefined>(db.transaction('drafts').objectStore('drafts').get(DRAFT_KEY));
 }
 
-export async function saveDraft(card: CheckCard) {
-  const db = await openDatabase();
+export async function saveDraft(card: CheckCard, mode: StorageMode = 'real') {
+  const db = await openDatabase(mode);
   const tx = db.transaction('drafts', 'readwrite');
   tx.objectStore('drafts').put(card, DRAFT_KEY);
   await new Promise<void>((resolve, reject) => {
@@ -39,8 +44,8 @@ export async function saveDraft(card: CheckCard) {
   });
 }
 
-export async function saveHistory(card: CheckCard) {
-  const db = await openDatabase();
+export async function saveHistory(card: CheckCard, mode: StorageMode = 'real') {
+  const db = await openDatabase(mode);
   const copy = structuredClone(card);
   copy.id = crypto.randomUUID();
   copy.updatedAt = new Date().toISOString();
@@ -53,14 +58,14 @@ export async function saveHistory(card: CheckCard) {
   return copy;
 }
 
-export async function listHistory() {
-  const db = await openDatabase();
+export async function listHistory(mode: StorageMode = 'real') {
+  const db = await openDatabase(mode);
   const cards = await requestResult<CheckCard[]>(db.transaction('history').objectStore('history').getAll());
   return cards.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
-export async function deleteHistory(id: string) {
-  const db = await openDatabase();
+export async function deleteHistory(id: string, mode: StorageMode = 'real') {
+  const db = await openDatabase(mode);
   const tx = db.transaction('history', 'readwrite');
   tx.objectStore('history').delete(id);
   await new Promise<void>((resolve, reject) => {
@@ -69,6 +74,6 @@ export async function deleteHistory(id: string) {
   });
 }
 
-export async function replaceDraft(card: CheckCard) {
-  await saveDraft(card);
+export async function replaceDraft(card: CheckCard, mode: StorageMode = 'real') {
+  await saveDraft(card, mode);
 }

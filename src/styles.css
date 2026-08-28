@@ -71,8 +71,11 @@ h2 { margin-bottom: 12px; font-size: clamp(1.45rem, 3vw, 2rem); }
 .site-header nav a { min-height: 44px; display: inline-flex; align-items: center; color: var(--ink); font-size: .88rem; font-weight: 800; text-decoration: none; text-transform: uppercase; }
 .site-header nav a[aria-current="page"] { text-decoration: underline; text-decoration-color: var(--red); text-decoration-thickness: 4px; text-underline-offset: 7px; }
 
-.offline-strip, .license-strip { padding: 8px 20px; background: var(--yellow); color: var(--ink); border-bottom: 2px solid var(--ink); text-align: center; font-weight: 800; }
-.license-strip { background: var(--sheet); color: var(--red-dark); }
+.offline-strip { padding: 8px 20px; background: var(--yellow); color: var(--ink); border-bottom: 2px solid var(--ink); text-align: center; font-weight: 800; }
+.demo-strip { position: sticky; z-index: 50; top: 0; display: flex; align-items: center; justify-content: center; gap: 12px 24px; padding: 10px max(20px, env(safe-area-inset-right)) 10px max(20px, env(safe-area-inset-left)); border-bottom: 2px solid var(--ink); background: var(--yellow); color: var(--ink); }
+.demo-strip span { font-size: .78rem; }
+.demo-strip div { display: flex; gap: 10px; }
+.demo-strip button, .demo-strip a { min-height: 44px; display: inline-flex; align-items: center; padding: 8px 12px; border: 2px solid var(--ink); background: var(--sheet); color: var(--ink); cursor: pointer; font-weight: 900; text-decoration: none; }
 .loading-state { display: grid; min-height: 75vh; place-content: center; padding: 32px; text-align: center; }
 .loading-state h1 { font-size: clamp(2.5rem, 9vw, 5rem); }
 main { min-height: 64vh; }
@@ -87,6 +90,10 @@ main { min-height: 64vh; }
 .hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 20px; }
 .local-note { color: var(--muted); font-size: .86rem; }
 .text-link { min-height: 44px; display: inline-flex; align-items: center; font-weight: 800; }
+.real-start { align-self: flex-start; margin-top: 12px; }
+.saved-link { align-self: flex-start; margin-top: 4px; }
+.hero-facts { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 22px 0 0; padding: 16px 0 0; border-top: 2px solid var(--ink); list-style: none; font-size: .8rem; font-weight: 900; text-transform: uppercase; }
+.hero-facts li::before { color: var(--green); content: "✓ "; }
 .hero-art { position: relative; margin: 0; min-height: 580px; border-left: 2px solid var(--ink); background: var(--sheet); overflow: hidden; }
 .hero-art picture, .hero-art img { width: 100%; height: 100%; }
 .hero-art img { object-fit: cover; filter: saturate(.88) contrast(1.03); }
@@ -268,11 +275,16 @@ footer a { color: var(--sheet); }
 }
 
 @media (max-width: 620px) {
-  .site-header { align-items: flex-start; }
-  .brand span:last-child { max-width: 6rem; line-height: 1.05; }
-  .site-header nav { gap: 8px; }
-  .site-header nav a { padding: 0 5px; font-size: .68rem; }
-  .hero-copy { min-height: 540px; padding: 56px 24px; }
+  .site-header { align-items: flex-start; flex-wrap: wrap; gap: 8px; }
+  .brand span:last-child { line-height: 1.05; }
+  .site-header nav { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; }
+  .site-header nav a { padding: 0 4px; font-size: .7rem; }
+  .demo-strip { position: sticky; align-items: flex-start; flex-direction: column; gap: 6px; }
+  .demo-strip div { width: 100%; }
+  .demo-strip button, .demo-strip a { flex: 1; justify-content: center; }
+  .hero-copy { min-height: 570px; padding: 48px 24px; }
+  .hero-actions { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .hero-facts { gap: 8px 14px; }
   .hero-art { min-height: 330px; }
   .workflow { padding: 56px 24px; }
   .steps { grid-template-columns: 1fr; }

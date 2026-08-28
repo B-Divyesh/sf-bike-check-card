@@ -1,27 +1,34 @@
 # Bike Check Card
 
-Bike Check Card is a private, offline field sheet for cyclists who need to document a fault before asking a mechanic or community for help. It captures the bike and component, symptoms and timeline, ride context, pressure/mileage, wheel-sensor versus GPS readings, and locally annotated photos.
+Record bike-fault evidence before asking a mechanic or cycling community for help.
 
-It organizes evidence; it does not diagnose a fault, recommend replacement, confirm warranty eligibility, or tell anyone a bicycle is safe to ride.
+Bike Check Card records the bike, component, symptom, ride context, measurements, timeline, and marked photos. It does not diagnose faults or decide whether a bike is safe.
 
-Live site: <https://bike-check-card.sociobot.in>
+Try the isolated sample: <https://bike-check-card.sociobot.in/demo>
 
-## Product behavior
+## Who it is for
 
-- The live draft and saved snapshots use IndexedDB and survive refreshes.
-- Photos are resized in the browser and stay on the device.
-- “Copy private link” puts text in a URL fragment, which is not sent to the server. Photos are deliberately excluded; anyone with the link can read its contents.
-- “Print / save PDF” uses the browser print dialog and can include photos.
-- JSON backup/import moves the complete card, including photos, without a service account.
-- The installed PWA works offline after its first successful load.
-- The free edition includes the full workflow, all exports, and one saved snapshot. The optional $9 one-time supporter license unlocks unlimited local history through the Sociobot billing API.
+It is for cyclists who want a clear record before asking for help. No account is required, and the app is free to use.
 
-## Develop and verify
+## What it does
 
-Requires a current Node.js release.
+- Real drafts and saved cards stay in this browser.
+- Demo changes use a separate browser database and never alter the real draft.
+- Photos can be added and marked without uploading them.
+- Shared text links use the URL fragment and leave photos out.
+- JSON backup exports and restores the complete card.
+- The print action sends the completed card to the browser print dialog.
+- The app works offline after the first visit.
+- The app loads no analytics, remote fonts, ads, or tracking scripts.
+
+Every statement above has a tagged browser test in [`.factory/claims.json`](.factory/claims.json).
+
+## Run and test
+
+Use a current Node.js release.
 
 ```sh
-npm install
+npm ci
 npm run dev
 npm test
 npm run lint
@@ -29,17 +36,38 @@ npm run build
 npm run test:e2e
 ```
 
-`npm run build` is the deployment command. It creates `dist/` with `index.html` at its root and direct static entry points for `/privacy` and `/terms`. The Playwright suite uses the preinstalled Chromium build and checks phone/desktop workflows, IndexedDB persistence, photo annotation, serious/critical axe findings, and an explicit offline reload.
+`npm run build` creates `dist/` with `index.html` at its root. The browser suite uses Playwright 1.58.2 and its installed Chromium.
 
-## Architecture
+Run one claim by its id:
 
-Vite and strict vanilla TypeScript keep the initial app bundle small. IndexedDB stores records, Canvas provides photo markup, and a hand-written service worker precaches the versioned shell. There are no runtime CDN resources, third-party fonts, analytics, accounts, or telemetry ingestion.
+```sh
+npm run test:e2e -- --grep @claim:demo-isolation
+```
 
-The researched scope is in [`.factory/brief.json`](.factory/brief.json), the cassette-era visual system and artwork provenance are in [`.factory/design.md`](.factory/design.md), and verification notes are in [`.factory/handoff.md`](.factory/handoff.md).
+## Routes
 
-## Deployment
+- `/` explains the product and offers the sample.
+- `/demo` opens the isolated completed sample.
+- `/card` opens the real draft.
+- `/cards` opens saved cards.
+- `/privacy` and `/terms` explain data handling and use.
+- Unknown paths use the product-specific 404 page.
 
-Publish the contents of `dist/` as a static site. `staticwebapp.config.json` is included in the build for Azure Static Web Apps: content-hashed `/assets/*` receive one-year immutable caching, while HTML and `sw.js` revalidate so updates remain discoverable; it also declares the manifest media type and browser response policies. The factory owns DNS, infrastructure, and registration of the Sociobot product slug; this repository does not provision them.
+## Build and deployment
+
+The app uses Vite and strict TypeScript. Browser storage holds cards, and a service worker provides offline reloads.
+
+Publish the contents of `dist/` as a static site. The included hosting configuration sets caching, content types, security headers, and the 404 response.
+
+The factory owns DNS and deployment. This repository does not change infrastructure, billing, or DNS.
+
+## Product records
+
+- [Opportunity brief](.factory/brief.json)
+- [Visual design and artwork provenance](.factory/design.md)
+- [Demo sandbox](.factory/demo.md)
+- [Repair evidence](.factory/polish-1.md)
+- [Handoff](.factory/handoff.md)
 
 ## License
 
