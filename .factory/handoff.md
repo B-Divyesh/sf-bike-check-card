@@ -66,3 +66,22 @@ npm run test:e2e -- --grep @claim:demo-isolation
 ## Known gaps and next steps
 
 None. The product intentionally records evidence and does not diagnose safety, ingest telemetry, or decide warranty eligibility.
+
+## Review 2 handoff
+
+Work order: `bike-check-card-review-2`
+Completed: 2026-08-29
+Result: **PASS** with zero findings. No product code was changed. See
+[review-2.md](review-2.md) for the complete adversarial review.
+
+This reviewer used fresh live Chromium contexts at 390 × 844 and 1440 × 900;
+checked the one-click demo, reset, start-for-real, isolated storage, offline
+reload, and live request log; and verified every declared claim from a clean
+clone at `/tmp/bike-check-card-review-wlgCUz`. `npm ci`, `npm test`, and
+`npm run build` passed. Every claims command passed in both Playwright projects
+and the full suite passed 30/30. Route metadata, focus/back behavior,
+header/footer, sitemap, link crawl, HTTP 404, and all F-1 findings were
+rechecked live and in source.
+
+Known gaps: none. Future features should keep the isolated demo namespace and
+add a registered observable claim test for each new visitor-reliance statement.
