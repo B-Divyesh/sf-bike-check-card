@@ -6,6 +6,7 @@
 - Result: **PASS — V3-1 through V3-3 repaired and verified**
 - Deployed implementation: `6dafa460185582dff7e7d6e044e50fffd057e2bc`
 - Post-deploy test revision: `d9a35c910ad6cf4741aac06efcf85650ab58db83`
+- Documentation evidence revision: `2795ac10d1827342ce17a08abc12c1afdd13141e` (report-only)
 - Deployment: `5f048cda-19ab-4324-81bb-914297866fb6`
 
 ## What changed
