@@ -53,7 +53,7 @@ function shell(content: string, active = '') {
     <footer>
       <p>Record bike-fault evidence for a mechanic or cycling community.</p>
       <nav aria-label="Legal"><a href="/privacy" data-nav>Privacy</a><a href="/terms" data-nav>Terms</a></nav>
-      <p class="generated-note">Built by Param Factory · v1.1.1 · repair-2 · Original generated artwork.</p>
+      <p class="generated-note">Built by Param Factory · v1.1.2 · repair-3 · Original generated artwork.</p>
     </footer>
     <div class="visually-hidden" id="route-announcer" role="status" aria-live="polite" aria-atomic="true"></div>
     <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>`;
@@ -249,7 +249,7 @@ async function renderRoute(focusHeading = !firstRender, scrollY = 0) {
   storageMode = requestedMode;
   let meta: RouteMeta;
   if (shared) {
-    try { app.innerHTML = sharedTemplate(decodeCard(shared)); } catch (error) { app.innerHTML = invalidShareTemplate(error instanceof Error ? error.message : 'The link is invalid.'); }
+    try { app.innerHTML = sharedTemplate(decodeCard(shared)); } catch { app.innerHTML = invalidShareTemplate('This shared card link is damaged. Ask the sender to copy a new link.'); }
     meta = { title: 'Shared card — Bike Check Card', description: 'Read a cyclist’s shared bike-fault evidence.', canonical: '/' };
   } else if (url.pathname === '/privacy') {
     app.innerHTML = privacyTemplate();
@@ -481,7 +481,7 @@ async function importBackup(file?: File) {
     await replaceDraft(draft, storageMode);
     await renderRoute(false, 0);
     showToast('Backup imported into the live draft.');
-  } catch (error) { setActionError(error instanceof Error ? error.message : 'The backup could not be read.'); }
+  } catch { setActionError('This is not a Bike Check Card backup. Choose an exported Bike Check Card JSON file.'); }
 }
 
 function bindPageActions() {

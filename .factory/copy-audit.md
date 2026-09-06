@@ -44,7 +44,7 @@ Audited 2026-09-06. Hyphenated words are counted as separate readable words. No 
 | Record bike-fault evidence for a mechanic or cycling community. | 9 | Pass |
 | Terms | 1 | Pass |
 | Built by Param Factory. | 4 | Pass |
-| v1.1.1 · repair-2 | 2 | Pass; build identifier. |
+| v1.1.2 · repair-3 | 2 | Pass; build identifier. |
 | Original generated artwork. | 3 | Pass |
 
 ## Terminology

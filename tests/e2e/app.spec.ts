@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { readFileSync } from 'node:fs';
 
@@ -13,6 +13,18 @@ function paddedJpg(size: number, name: string) {
   const buffer = Buffer.alloc(size);
   jpgPhoto.copy(buffer);
   return { name, mimeType: 'image/jpeg', buffer };
+}
+
+async function storedPhoto(page: Page, database: string, index: number) {
+  return page.evaluate(({ database, index }) => new Promise<{ dataUrl: string; annotatedDataUrl?: string }>((resolve, reject) => {
+    const request = indexedDB.open(database);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const get = request.result.transaction('drafts').objectStore('drafts').get('current');
+      get.onerror = () => reject(get.error);
+      get.onsuccess = () => resolve(get.result.photos[index]);
+    };
+  }), { database, index });
 }
 
 test('@claim:core-capture opens a completed bike-fault record', async ({ page }) => {
@@ -64,6 +76,20 @@ test('@claim:local-save restores a real draft after reload', async ({ page }) =>
   await expect(page.locator('#field-component')).toHaveValue('Brakes');
 });
 
+test('@claim:saved-card-reload keeps a saved card after reload', async ({ page }) => {
+  await page.goto('/card');
+  await page.locator('#field-bike').fill('Reloadable saved city bike');
+  await page.locator('#field-component').selectOption('Brakes');
+  await page.locator('#field-symptom').fill('Brake rub appears once per wheel turn.');
+  await page.locator('#field-mileage').fill('0 km');
+  await page.getByRole('button', { name: 'Save to my cards' }).click();
+  await expect(page.getByText('Copy saved to Saved cards.')).toBeVisible();
+  await page.goto('/cards');
+  await expect(page.getByRole('heading', { name: 'Reloadable saved city bike' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Reloadable saved city bike' })).toBeVisible();
+});
+
 test('@claim:offline-reload reloads the completed demo offline', async ({ page, context }) => {
   await page.goto('/demo');
   await page.evaluate(async () => { await navigator.serviceWorker.ready; });
@@ -92,19 +118,29 @@ test('@claim:photo-local adds and marks a photo without uploading it', async ({ 
   await page.mouse.up();
   await page.getByRole('button', { name: 'Save marked photo' }).click();
   await expect(page.getByText('Marked photo saved.')).toBeVisible();
-  const stored = await page.evaluate(async () => new Promise<{ dataUrl: string; annotatedDataUrl?: string }>((resolve, reject) => {
-    const request = indexedDB.open('demo:bike-check-card');
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => {
-      const get = request.result.transaction('drafts').objectStore('drafts').get('current');
-      get.onerror = () => reject(get.error);
-      get.onsuccess = () => resolve(get.result.photos[1]);
-    };
-  }));
+  const stored = await storedPhoto(page, 'demo:bike-check-card', 1);
   expect(stored.dataUrl).toMatch(/^data:image\/webp;base64,/);
   expect(stored.annotatedDataUrl).toMatch(/^data:image\/webp;base64,/);
   const origin = new URL(page.url()).origin;
   expect(requests.every(value => new URL(value).origin === origin)).toBe(true);
+});
+
+test('@claim:original-photo-unchanged keeps the stored original after marking', async ({ page }) => {
+  await page.goto('/demo');
+  const originalBefore = (await storedPhoto(page, 'demo:bike-check-card', 0)).dataUrl;
+  await page.getByRole('button', { name: 'Mark photo' }).first().click();
+  const canvas = page.locator('#annotation-canvas');
+  const box = await canvas.boundingBox();
+  if (!box) throw new Error('Annotation canvas is not visible.');
+  await page.mouse.move(box.x + 20, box.y + 20);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 80, box.y + 80);
+  await page.mouse.up();
+  await page.getByRole('button', { name: 'Save marked photo' }).click();
+  const marked = await storedPhoto(page, 'demo:bike-check-card', 0);
+  expect(marked.dataUrl).toBe(originalBefore);
+  expect(marked.annotatedDataUrl).toBeDefined();
+  expect(marked.annotatedDataUrl).not.toBe(originalBefore);
 });
 
 test('@claim:share-prerequisites blocks incomplete cards and shares at the exact minimum', async ({ page, context }) => {
@@ -220,6 +256,36 @@ test('@claim:json-backup exports and restores the complete demo card', async ({ 
   await expect(page.getByAltText(/Sensor and magnet gap circled in red/)).toBeVisible();
 });
 
+test('@claim:print-photos keeps completed-card photos visible in print media', async ({ page }) => {
+  await page.goto('/demo');
+  await page.emulateMedia({ media: 'print' });
+  const photo = page.getByAltText(/Sensor and magnet gap circled in red/);
+  await expect(photo).toBeVisible();
+  expect(await photo.evaluate(element => getComputedStyle(element).display)).not.toBe('none');
+});
+
+test('@claim:site-data-clear removes saved cards and drafts after browser site-data clearing', async ({ page, context }) => {
+  await page.goto('/card');
+  const origin = new URL(page.url()).origin;
+  await page.locator('#field-bike').fill('Card removed with site data');
+  await page.locator('#field-component').selectOption('Brakes');
+  await page.locator('#field-symptom').fill('Brake rub appears once per wheel turn.');
+  await page.locator('#field-mileage').fill('0 km');
+  await page.getByRole('button', { name: 'Save to my cards' }).click();
+  await page.goto('/cards');
+  await expect(page.getByRole('heading', { name: 'Card removed with site data' })).toBeVisible();
+
+  await page.goto('about:blank');
+  const session = await context.newCDPSession(page);
+  await session.send('Storage.clearDataForOrigin', { origin, storageTypes: 'indexeddb' });
+  await session.detach();
+
+  await page.goto('/cards');
+  await expect(page.getByRole('heading', { name: 'No saved cards yet' })).toBeVisible();
+  await page.goto('/card');
+  await expect(page.locator('#field-bike')).toHaveValue('');
+});
+
 test('@claim:same-origin keeps the whole demo flow on the product origin', async ({ page }) => {
   const requests: string[] = [];
   page.on('request', request => requests.push(request.url()));
@@ -257,6 +323,39 @@ test('@claim:print-card sends the completed demo to browser print', async ({ pag
   await page.goto('/demo');
   await page.getByRole('button', { name: 'Print / save PDF' }).click();
   expect(await page.evaluate(() => Boolean((window as Window & { printCalled?: boolean }).printCalled))).toBe(true);
+});
+
+test('uses plain recovery instructions for damaged backups and shared links', async ({ page }) => {
+  await page.goto('/demo');
+  await page.locator('#import-json').setInputFiles({ name: 'damaged.json', mimeType: 'application/json', buffer: Buffer.from('{not valid JSON') });
+  await expect(page.locator('#action-error')).toHaveText('This is not a Bike Check Card backup. Choose an exported Bike Check Card JSON file.');
+  await expect(page.locator('#action-error')).not.toContainText(/Unexpected token|Expected property/i);
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export backup' }).click();
+  const backup = await downloadPromise;
+  const backupPath = await backup.path();
+  if (!backupPath) throw new Error('Backup download has no local path.');
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('#import-json').setInputFiles(backupPath);
+  await expect(page.getByText('Backup imported into the live draft.')).toBeVisible();
+
+  await page.goto('/#card=not-valid');
+  await expect(page.getByText('This shared card link is damaged. Ask the sender to copy a new link.')).toBeVisible();
+  await expect(page.locator('.message-page')).not.toContainText(/Unexpected token|Invalid character/i);
+  await page.getByRole('link', { name: 'Go to Bike Check Card' }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('heading', { name: 'Record bike-fault evidence' })).toBeVisible();
+});
+
+test('gives the repeated wordmark and legal links 44 pixel touch targets', async ({ page }) => {
+  await page.goto('/demo');
+  for (const link of [page.locator('.brand'), page.locator('footer a[href="/privacy"]'), page.locator('footer a[href="/terms"]')]) {
+    const box = await link.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.width).toBeGreaterThanOrEqual(44);
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+  }
 });
 
 test('routes set titles, metadata, focus, history, and direct URLs', async ({ page }) => {

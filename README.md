@@ -12,12 +12,15 @@ It is for cyclists who want a clear record before asking for help. No account is
 
 ## What it does
 
-- Real drafts and saved cards stay in this browser.
+- Real drafts stay in this browser.
+- Saved cards stay after you reload.
 - Demo changes use a separate browser database and never alter the real draft.
 - Photos can be added and marked without uploading them.
+- Marking a photo leaves the original unchanged.
 - Shared text links use the URL fragment and leave photos out.
 - JSON backup exports and restores the complete card.
-- The print action sends the completed card to the browser print dialog.
+- Print/PDF and backup include photos.
+- Clearing site data removes these records.
 - The app works offline after the first visit.
 - The app loads no analytics, remote fonts, ads, or tracking scripts.
 

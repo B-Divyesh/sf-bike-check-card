@@ -65,7 +65,7 @@ h2 { margin-bottom: 12px; font-size: clamp(1.45rem, 3vw, 2rem); }
   border-bottom: 2px solid var(--ink);
   background: rgba(243, 236, 216, .96);
 }
-.brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); font-weight: 900; text-decoration: none; text-transform: uppercase; letter-spacing: -.03em; }
+.brand { display: inline-flex; align-items: center; min-width: 44px; min-height: 44px; gap: 10px; padding: 5px 0; color: var(--ink); font-weight: 900; text-decoration: none; text-transform: uppercase; letter-spacing: -.03em; }
 .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; background: var(--red); color: #fff; border: 2px solid var(--ink); font-size: 25px; line-height: 1; }
 .site-header nav, footer nav { display: flex; gap: 24px; align-items: center; }
 .site-header nav a { min-height: 44px; display: inline-flex; align-items: center; color: var(--ink); font-size: .88rem; font-weight: 800; text-decoration: none; text-transform: uppercase; }
@@ -257,7 +257,7 @@ dialog::backdrop { background: rgba(23, 23, 19, .78); }
 .toast-action { min-height: 44px; padding: 8px 12px; border: 2px solid #fff; background: transparent; color: #fff; cursor: pointer; font-weight: 900; }
 footer { display: grid; grid-template-columns: 1fr auto; gap: 12px 32px; align-items: center; padding: 32px max(24px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left)); border-top: 2px solid var(--ink); background: var(--ink); color: var(--sheet); font-size: .78rem; }
 footer p { margin: 0; }
-footer a { color: var(--sheet); }
+footer a { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; color: var(--sheet); }
 .generated-note { grid-column: 1 / -1; color: #c7c3b7; font-size: .7rem; }
 
 @media (max-width: 900px) {
