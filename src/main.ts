@@ -53,7 +53,7 @@ function shell(content: string, active = '') {
     <footer>
       <p>Record bike-fault evidence for a mechanic or cycling community.</p>
       <nav aria-label="Legal"><a href="/privacy" data-nav>Privacy</a><a href="/terms" data-nav>Terms</a></nav>
-      <p class="generated-note">Built by Param Factory · v1.1.2 · repair-3 · Original generated artwork.</p>
+      <p class="generated-note">Built by Param Factory · v1.1.3 · repair-4 · Original generated artwork.</p>
     </footer>
     <div class="visually-hidden" id="route-announcer" role="status" aria-live="polite" aria-atomic="true"></div>
     <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>`;
@@ -147,7 +147,7 @@ function editorTemplate(card: CheckCard) {
           ${field('Bike distance / mileage', 'mileage', card.mileage, { hint: 'Value and unit, if known', inputmode: 'decimal' })}
           ${field('Tyre pressure', 'pressure', card.pressure, { hint: 'Example: 65 psi / 4.5 bar', inputmode: 'decimal' })}
         </div></section>
-        <section class="form-section" aria-labelledby="symptom-title"><div class="section-head"><span>02</span><div><h2 id="symptom-title">Pin down the symptom</h2><p>Describe what changed, not what you think the diagnosis is.</p></div></div><div class="field-grid">
+        <section class="form-section" aria-labelledby="symptom-title"><div class="section-head"><span>02</span><div><h2 id="symptom-title">Describe the symptom</h2><p>Describe what changed, not what you think the diagnosis is.</p></div></div><div class="field-grid">
           ${textarea('Exact symptom', 'symptom', card.symptom, 'What can you see, hear, feel, or reproduce?', true)}
           ${field('First noticed', 'started', card.started, { hint: 'Date/time or point in the ride' })}
           ${textarea('Symptom timeline', 'timeline', card.timeline, 'Example: intermittent for 10 km, then constant under load')}
@@ -195,7 +195,7 @@ function invalidShareTemplate(message: string) {
 }
 
 function notFoundTemplate() {
-  return shell(`<main id="main" tabindex="-1" class="message-page"><p class="stamp stamp-danger">404 / Missing page</p><h1>This page is not on the workbench</h1><p>The address may be wrong, or the page may have moved.</p><a class="button button-primary" href="/" data-nav>Return home</a></main>`);
+  return shell(`<main id="main" tabindex="-1" class="message-page"><p class="stamp stamp-danger">404 / Missing page</p><h1>Page not found</h1><p>The address may be wrong, or the page may have moved.</p><a class="button button-primary" href="/" data-nav>Return home</a></main>`);
 }
 
 async function historyTemplate() {

@@ -1,4 +1,4 @@
-const CACHE = 'bike-check-card-v1.1.1';
+const CACHE = 'bike-check-card-v1.1.3';
 const SHELL = ['/', '/index.html', '/offline.html', '/manifest.webmanifest', '/icon.svg', '/icon-192.png', '/icon-512.png', '/icon-maskable-512.png', '/assets/demo-sensor.webp'/* PRECACHE_ASSETS */];
 
 self.addEventListener('install', event => {

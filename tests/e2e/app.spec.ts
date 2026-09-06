@@ -370,6 +370,7 @@ test('routes set titles, metadata, focus, history, and direct URLs', async ({ pa
   await expect(page.locator('h1')).toBeFocused();
   await expect(page).toHaveTitle('Demo — Bike Check Card');
   await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /separate sample workspace/);
+  await expect(page.getByRole('heading', { name: 'Describe the symptom', level: 2 })).toBeVisible();
   await page.goBack();
   await expect(page).toHaveURL(`${origin}/`);
   await expect(page.locator('h1')).toBeFocused();
@@ -380,6 +381,10 @@ test('routes set titles, metadata, focus, history, and direct URLs', async ({ pa
   await expect(page).toHaveTitle('Privacy — Bike Check Card');
   await page.goto('/terms');
   await expect(page).toHaveTitle('Terms — Bike Check Card');
+  await page.goto('/missing-copy-check');
+  await expect(page).toHaveTitle('Page not found — Bike Check Card');
+  await expect(page.getByRole('heading', { name: 'Page not found', level: 1 })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Return home' })).toBeVisible();
 });
 
 test('has no serious accessibility violations or console errors', async ({ page }) => {
