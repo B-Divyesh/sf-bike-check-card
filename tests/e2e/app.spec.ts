@@ -228,9 +228,10 @@ test('@claim:photo-size-limit accepts exactly 10 MB, rejects one byte more, and 
 test('@claim:fragment-share creates a text-only fragment link', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.goto('/demo');
+  const origin = new URL(page.url()).origin;
   await page.getByRole('button', { name: 'Copy private link' }).click();
   const sharedUrl = await page.evaluate(() => navigator.clipboard.readText());
-  expect(sharedUrl).toMatch(/^http:\/\/127\.0\.0\.1:4173\/#card=/);
+  expect(sharedUrl.startsWith(`${origin}/#card=`)).toBe(true);
   expect(sharedUrl).not.toContain('demo-sensor');
   expect(sharedUrl).not.toContain('data:image');
   let documentRequest = '';
@@ -360,8 +361,9 @@ test('gives the repeated wordmark and legal links 44 pixel touch targets', async
 
 test('routes set titles, metadata, focus, history, and direct URLs', async ({ page }) => {
   await page.goto('/');
+  const origin = new URL(page.url()).origin;
   await expect(page).toHaveTitle('Bike Check Card — record bike-fault evidence');
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'http://127.0.0.1:4173/');
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `${origin}/`);
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', /social-card\.jpg$/);
   await page.getByRole('link', { name: 'Try demo' }).click();
   await expect(page).toHaveURL(/\/demo$/);
@@ -369,7 +371,7 @@ test('routes set titles, metadata, focus, history, and direct URLs', async ({ pa
   await expect(page).toHaveTitle('Demo — Bike Check Card');
   await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /separate sample workspace/);
   await page.goBack();
-  await expect(page).toHaveURL('http://127.0.0.1:4173/');
+  await expect(page).toHaveURL(`${origin}/`);
   await expect(page.locator('h1')).toBeFocused();
   await page.goForward();
   await expect(page).toHaveURL(/\/demo$/);
