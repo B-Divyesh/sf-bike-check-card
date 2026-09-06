@@ -151,15 +151,22 @@ test('@claim:six-photo-limit rejects a seventh photo and accepts a replacement',
   await expect(page.getByText('1 photo added locally.')).toBeVisible();
 });
 
-test('@claim:photo-formats adds JPG and PNG, rejects text, and recovers', async ({ page }) => {
+test('@claim:photo-formats adds JPG and PNG, rejects other formats, and recovers', async ({ page }) => {
   await page.goto('/demo');
   await page.locator('#photo-input').setInputFiles(pngPayload('evidence.png'));
   await expect(page.locator('.photo-card')).toHaveCount(2);
   await page.locator('#photo-input').setInputFiles({ name: 'evidence.jpg', mimeType: 'image/jpeg', buffer: jpgPhoto });
   await expect(page.locator('.photo-card')).toHaveCount(3);
 
+  await page.locator('#photo-input').setInputFiles([
+    pngPayload('valid-before-error.png'),
+    { name: 'unsupported.webp', mimeType: 'image/webp', buffer: pngPhoto }
+  ]);
+  await expect(page.locator('#photo-error')).toHaveText('unsupported.webp must be a JPG or PNG photo.');
+  await expect(page.locator('.photo-card')).toHaveCount(3);
+
   await page.locator('#photo-input').setInputFiles({ name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('not a photo') });
-  await expect(page.locator('#photo-error')).toHaveText('notes.txt is not an image.');
+  await expect(page.locator('#photo-error')).toHaveText('notes.txt must be a JPG or PNG photo.');
   await expect(page.locator('.photo-card')).toHaveCount(3);
 
   await page.locator('#photo-input').setInputFiles(pngPayload('recovered.png'));

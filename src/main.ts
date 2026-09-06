@@ -7,6 +7,9 @@ import { decodeCard, makeShareUrl } from './share';
 const app = document.querySelector<HTMLDivElement>('#app') as HTMLDivElement;
 if (!app) throw new Error('App root is missing.');
 
+const supportedPhotoTypes = new Set(['image/jpeg', 'image/png']);
+const photoSizeLimitBytes = 10 * 1024 * 1024;
+
 document.querySelector<HTMLAnchorElement>('.skip-link')?.addEventListener('click', event => {
   event.preventDefault();
   const main = document.querySelector<HTMLElement>('#main');
@@ -334,8 +337,8 @@ function bindEditor() {
 }
 
 async function imageToDataUrl(file: File) {
-  if (!file.type.startsWith('image/')) throw new Error(`${file.name} is not an image.`);
-  if (file.size > 10 * 1024 * 1024) throw new Error(`${file.name} is larger than 10 MB.`);
+  if (!supportedPhotoTypes.has(file.type)) throw new Error(`${file.name} must be a JPG or PNG photo.`);
+  if (file.size > photoSizeLimitBytes) throw new Error(`${file.name} is larger than 10 MB.`);
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement('canvas');
@@ -352,7 +355,9 @@ async function addPhotos(files: FileList | null) {
   if (draft.photos.length + files.length > 6) { if (error) error.textContent = 'Choose no more than six photos in total.'; return; }
   if (error) error.textContent = '';
   try {
-    for (const file of Array.from(files)) draft.photos.push({ id: crypto.randomUUID(), dataUrl: await imageToDataUrl(file), caption: '' });
+    const addedPhotos: PhotoEvidence[] = [];
+    for (const file of Array.from(files)) addedPhotos.push({ id: crypto.randomUUID(), dataUrl: await imageToDataUrl(file), caption: '' });
+    draft.photos.push(...addedPhotos);
     await saveDraft(draft, storageMode);
     await renderRoute(false, window.scrollY);
     showToast(`${files.length} ${files.length === 1 ? 'photo' : 'photos'} added locally.`);
