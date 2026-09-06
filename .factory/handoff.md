@@ -1,110 +1,61 @@
 # Bike Check Card — repair handoff
 
-Work order: `bike-check-card-polish-1`
-
-Completed: 2026-08-28
-
-Verified implementation: `efa09a720ec1cc777f54c8a788573bac464fc1d9`
-Live: <https://bike-check-card.sociobot.in>
+- Work order: `bike-check-card-repair-2`
+- Completed: 2026-09-06
+- Live: <https://bike-check-card.sociobot.in>
 
 ## Result
 
-All F-1-1 through F-1-10 findings are fixed and independently rechecked on the live site. The exact finding-to-evidence map is in [`.factory/polish-1.md`](polish-1.md).
+Review 3 finding F-3-1 is fixed. Sharing prerequisites, the six-photo limit, accepted JPG/PNG formats, and the inclusive 10 MB limit each have a registered outcome test covering normal, invalid, boundary, and recovery behavior.
 
-The product remains a static offline PWA with its cassette-workshop-zine design. The repair adds a real isolated demo, claim registry, direct routes, real 404 response, complete metadata, route focus handling, plain first-screen copy, mobile navigation, and updated legal pages.
+The deployed product behavior is `d5364639a7f32e8d19ffa8cf7abefb98701b1e3e`. The later `c59ee32f7f76dd17ca3c5655ee388420a9ad1b3a` commit changes verification code only; it adds live-base support and correctly classifies the deliberate 404 console message.
 
-The broken paid offer was removed because its checkout was not registered. No purchase or license prompt remains. All card, history, export, print, privacy, and accessibility features are free.
+Deployment `b436a739-5f9d-473f-b90d-66d0f6b69001` succeeded. The live JavaScript and CSS hashes match the implementation build.
 
-## Demo
+## What changed
 
-- Direct URL: <https://bike-check-card.sociobot.in/demo>
-- Query URL: <https://bike-check-card.sociobot.in/?demo=1>
-- Demo database: `demo:bike-check-card`
-- Real database: `bike-check-card`
-- Sample: completed steel commuter sensor/GPS mismatch with measurements, context, timeline, notes, and marked photo.
-- Reset demo replaces only demo data. Start for real opens the untouched real draft.
+- Added four entries to `.factory/claims.json`, bringing the registry to 16 claims.
+- Added one browser test per new claim with observable results.
+- Narrowed the photo promise to JPG and PNG and enforced those MIME types at runtime.
+- Made mixed photo batches atomic so a rejected file cannot leave an unseen partial change.
+- Prevented Playwright from reusing a stale local preview server.
+- Added an optional `PLAYWRIGHT_BASE_URL` path for cold live checks.
+- Kept deliberate HTTP 404 navigation from being misclassified as a console defect.
 
-## Verification
+Full finding evidence is in [repair-2.md](repair-2.md). Earlier review and verification reports remain in `.factory/`.
 
-From a clean clone at `efa09a7`:
-
-- `npm ci` — passed; 61 packages; zero vulnerabilities.
-- `npm test` — passed; 8/8 unit assertions.
-- `npm run build` — passed; `dist/` contains root, demo, card, cards, privacy, terms, and 404 documents.
-- Every command in `.factory/claims.json` — passed; 12 claims × 2 browser projects = 24/24.
-- `npm run test:e2e` — passed; 30/30 mobile and desktop checks.
-- `npm audit --omit=dev` — zero vulnerabilities.
-
-Live checks after deployment `6f38cf0a-3d77-4100-a2d9-bec1204df083`:
-
-- `verify-url.sh` passed for `/` and `/demo`; zero console errors.
-- Cold live demo isolation/reset/start-real check passed.
-- Live offline reload of `/demo` passed and remained editable.
-- Whole representative flow made zero cross-origin requests.
-- Axe reported zero serious or critical issues on the checked routes.
-- Internal link crawl returned 200 for `/`, `/demo`, `/card`, `/cards`, `/privacy`, and `/terms`.
-- Unknown route returned HTTP 404 with the designed not-found screen.
-- Live Lighthouse mobile: 100 Performance, 100 Accessibility, 100 Best Practices, 100 SEO.
-- Metrics: FCP 0.9 s, LCP 1.1 s, TBT 0 ms, CLS 0.
-- Initial payload: 34,234-byte JS, 18,675-byte CSS, no font payload, 60,862-byte mobile hero.
-
-## Run locally
+## Verify locally
 
 ```sh
 npm ci
 npm test
+npm run lint
 npm run build
 npm run test:e2e
 ```
 
-Run one registered claim with its `.factory/claims.json` command. Example:
+Run every `test` command in `.factory/claims.json` independently. To run suitable browser checks against production, set `PLAYWRIGHT_BASE_URL=https://bike-check-card.sociobot.in`.
 
-```sh
-npm run test:e2e -- --grep @claim:demo-isolation
-```
+## Verified results
 
-## Known gaps and next steps
+- Unit: 8/8 passed.
+- Registered claims: 16/16 commands passed; 32/32 phone and desktop executions.
+- Full browser suite: 38/38 passed.
+- Build: passed; `dist/` is the deployable root.
+- Production dependency audit: zero vulnerabilities.
+- Live `verify-url.sh`: passed on home and demo with zero console errors.
+- Live Axe: zero serious or critical findings.
+- Live offline, isolation, privacy, route focus, legal pages, links, and expected 404: passed.
+- Lighthouse mobile: 99 Performance, 100 Accessibility, 100 Best Practices, 100 SEO.
+- Payload: 34,301-byte JS, 18,675-byte CSS, no font payload, 60,862-byte mobile hero.
 
-None. The product intentionally records evidence and does not diagnose safety, ingest telemetry, or decide warranty eligibility.
+## Demo
 
-## Review 2 handoff
+- URL: <https://bike-check-card.sociobot.in/demo>
+- Demo database: `demo:bike-check-card`
+- Real database: `bike-check-card`
+- Reset replaces only sample data. Start for real returns to the untouched real draft.
 
-Work order: `bike-check-card-review-2`
-Completed: 2026-08-29
-Result: **PASS** with zero findings. No product code was changed. See
-[review-2.md](review-2.md) for the complete adversarial review.
+## Known gaps
 
-This reviewer used fresh live Chromium contexts at 390 × 844 and 1440 × 900;
-checked the one-click demo, reset, start-for-real, isolated storage, offline
-reload, and live request log; and verified every declared claim from a clean
-clone at `/tmp/bike-check-card-review-wlgCUz`. `npm ci`, `npm test`, and
-`npm run build` passed. Every claims command passed in both Playwright projects
-and the full suite passed 30/30. Route metadata, focus/back behavior,
-header/footer, sitemap, link crawl, HTTP 404, and all F-1 findings were
-rechecked live and in source.
-
-Known gaps: none. Future features should keep the isolated demo namespace and
-add a registered observable claim test for each new visitor-reliance statement.
-
-## Review 3 handoff
-
-Work order: `bike-check-card-review-3`
-Completed: 2026-09-06
-Result: **FAIL** — see [review-3.md](review-3.md).
-
-No product code changed. The live implementation reviewed is
-`efa09a720ec1cc777f54c8a788573bac464fc1d9`; the documentation head is
-`c6474d69e2d31fa1ca13251606bf3c67d3e96dfd`. Their deployed JavaScript and CSS
-matched a clean local build by SHA-256.
-
-Verification completed: fresh phone and desktop live sessions; first-screen
-read; isolated sample, reset, and start-for-real check; normal, invalid,
-boundary, and recovery photo checks; offline reload; same-origin request log;
-Axe; keyboard, focus, and reduced motion; legal routes, metadata, links, and
-designed HTTP 404. `npm ci`, `npm test` (8/8), `npm run lint`, `npm run build`,
-every declared claims command, and `npm run test:e2e` (30/30) passed.
-
-Known gap: the public share prerequisite, six-photo limit, supported image
-format wording, and 10 MB image limit have no entries in `.factory/claims.json`
-or tagged sandbox tests. Add observable claim tests (or narrow/remove the copy)
-and rerun the review before declaring PASS.
+None found within scope. Bike Check Card intentionally records evidence without diagnosing faults, deciding ride safety, ingesting telemetry, or claiming warranty compatibility.

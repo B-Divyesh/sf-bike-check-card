@@ -4,6 +4,8 @@ Audited 2026-09-06. Hyphenated words are counted as separate readable words. No 
 
 | Copy | Words | Result |
 | --- | ---: | --- |
+| Skip to main content | 4 | Pass |
+| Opening your check card… | 4 | Pass |
 | Bike Check Card | 3 | Pass |
 | Try demo | 2 | Pass |
 | Open draft | 2 | Pass |
@@ -18,7 +20,10 @@ Audited 2026-09-06. Hyphenated words are counted as separate readable words. No 
 | No account | 2 | Pass |
 | Saved on this device | 4 | Pass |
 | Free to use | 3 | Pass |
+| Open N saved cards | 4 | Pass; conditional label uses the saved-card count. |
+| Zine-style workbench with a bicycle wheel, pressure gauge, fault photos and a marked evidence sheet | 16 | Pass; meaningful image alternative. |
 | Original artwork for Bike Check Card. | 6 | Pass |
+| 01—04 | 1 | Pass; section range label. |
 | How to make a check card | 7 | Pass |
 | Add bike and component | 4 | Pass |
 | Name the bike and exact part. | 6 | Pass |
@@ -37,7 +42,9 @@ Audited 2026-09-06. Hyphenated words are counted as separate readable words. No 
 | Your card stays in this browser until you export it. | 10 | Pass |
 | Shared text links leave photos out. | 6 | Pass |
 | Record bike-fault evidence for a mechanic or cycling community. | 9 | Pass |
+| Terms | 1 | Pass |
 | Built by Param Factory. | 4 | Pass |
+| v1.1.1 · repair-2 | 2 | Pass; build identifier. |
 | Original generated artwork. | 3 | Pass |
 
 ## Terminology
