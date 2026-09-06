@@ -69,7 +69,7 @@ The factory owns DNS and deployment. This repository does not change infrastruct
 - [Opportunity brief](.factory/brief.json)
 - [Visual design and artwork provenance](.factory/design.md)
 - [Demo sandbox](.factory/demo.md)
-- [Latest repair evidence](.factory/repair-3.md)
+- [Latest repair evidence](.factory/repair-4.md)
 - [Handoff](.factory/handoff.md)
 
 ## License
