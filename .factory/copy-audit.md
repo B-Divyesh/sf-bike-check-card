@@ -1,6 +1,6 @@
 # Landing-page copy audit
 
-Audited 2026-08-28. Hyphenated words are counted as separate readable words. No line exceeds 22 words, and no banned marketing word appears.
+Audited 2026-09-06. Hyphenated words are counted as separate readable words. No line exceeds 22 words, and no banned marketing word appears.
 
 | Copy | Words | Result |
 | --- | ---: | --- |

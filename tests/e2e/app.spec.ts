@@ -1,7 +1,19 @@
 import { expect, test } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { readFileSync } from 'node:fs';
 
 const sampleBike = 'Steel commuter, 700c';
+const pngPhoto = readFileSync('public/icon-192.png');
+const jpgPhoto = readFileSync('public/assets/social-card.jpg');
+const photoSizeLimit = 10 * 1024 * 1024;
+
+const pngPayload = (name: string) => ({ name, mimeType: 'image/png', buffer: pngPhoto });
+
+function paddedJpg(size: number, name: string) {
+  const buffer = Buffer.alloc(size);
+  jpgPhoto.copy(buffer);
+  return { name, mimeType: 'image/jpeg', buffer };
+}
 
 test('@claim:core-capture opens a completed bike-fault record', async ({ page }) => {
   await page.goto('/demo');
@@ -93,6 +105,81 @@ test('@claim:photo-local adds and marks a photo without uploading it', async ({ 
   expect(stored.annotatedDataUrl).toMatch(/^data:image\/webp;base64,/);
   const origin = new URL(page.url()).origin;
   expect(requests.every(value => new URL(value).origin === origin)).toBe(true);
+});
+
+test('@claim:share-prerequisites blocks incomplete cards and shares at the exact minimum', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto('/demo');
+  page.once('dialog', dialog => dialog.accept());
+  await page.getByRole('button', { name: 'New blank card' }).click();
+  await expect(page.getByText('0 / 4')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Copy private link' }).click();
+  await expect(page.locator('#action-error')).toHaveText('Add the bike, component, symptom and at least one measurement before sharing.');
+
+  await page.locator('#field-bike').fill('Repair test commuter');
+  await page.locator('#field-component').selectOption('Brakes');
+  await page.locator('#field-symptom').fill('Front brake rubs once per wheel turn.');
+  await expect(page.getByText('3 / 4')).toBeVisible();
+  await page.getByRole('button', { name: 'Copy private link' }).click();
+  await expect(page.locator('#action-error')).toContainText('at least one measurement');
+
+  await page.locator('#field-mileage').fill('0 km');
+  await expect(page.getByText('4 / 4')).toBeVisible();
+  await page.getByRole('button', { name: 'Copy private link' }).click();
+  await expect(page.getByText('Private text link copied. Photos stayed on this device.')).toBeVisible();
+  const sharedUrl = await page.evaluate(() => navigator.clipboard.readText());
+  await page.goto(sharedUrl);
+  await expect(page.getByRole('heading', { name: 'Brakes check' })).toBeVisible();
+  await expect(page.getByText('Front brake rubs once per wheel turn.')).toBeVisible();
+});
+
+test('@claim:six-photo-limit rejects a seventh photo and accepts a replacement', async ({ page }) => {
+  await page.goto('/demo');
+  await page.locator('#photo-input').setInputFiles(Array.from({ length: 5 }, (_, index) => pngPayload(`limit-${index + 2}.png`)));
+  await expect(page.locator('.photo-card')).toHaveCount(6);
+
+  await page.locator('#photo-input').setInputFiles(pngPayload('seventh.png'));
+  await expect(page.locator('#photo-error')).toHaveText('Choose no more than six photos in total.');
+  await expect(page.locator('.photo-card')).toHaveCount(6);
+
+  page.once('dialog', dialog => dialog.accept());
+  await page.locator('.photo-card').last().getByRole('button', { name: 'Remove' }).click();
+  await expect(page.locator('.photo-card')).toHaveCount(5);
+  await page.locator('#photo-input').setInputFiles(pngPayload('replacement.png'));
+  await expect(page.locator('.photo-card')).toHaveCount(6);
+  await expect(page.getByText('1 photo added locally.')).toBeVisible();
+});
+
+test('@claim:photo-formats adds JPG and PNG, rejects text, and recovers', async ({ page }) => {
+  await page.goto('/demo');
+  await page.locator('#photo-input').setInputFiles(pngPayload('evidence.png'));
+  await expect(page.locator('.photo-card')).toHaveCount(2);
+  await page.locator('#photo-input').setInputFiles({ name: 'evidence.jpg', mimeType: 'image/jpeg', buffer: jpgPhoto });
+  await expect(page.locator('.photo-card')).toHaveCount(3);
+
+  await page.locator('#photo-input').setInputFiles({ name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('not a photo') });
+  await expect(page.locator('#photo-error')).toHaveText('notes.txt is not an image.');
+  await expect(page.locator('.photo-card')).toHaveCount(3);
+
+  await page.locator('#photo-input').setInputFiles(pngPayload('recovered.png'));
+  await expect(page.locator('.photo-card')).toHaveCount(4);
+  await expect(page.getByText('1 photo added locally.')).toBeVisible();
+});
+
+test('@claim:photo-size-limit accepts exactly 10 MB, rejects one byte more, and recovers', async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.goto('/demo');
+  await page.locator('#photo-input').setInputFiles(paddedJpg(photoSizeLimit, 'exactly-10mb.jpg'));
+  await expect(page.locator('.photo-card')).toHaveCount(2);
+
+  await page.locator('#photo-input').setInputFiles(paddedJpg(photoSizeLimit + 1, 'over-10mb.jpg'));
+  await expect(page.locator('#photo-error')).toHaveText('over-10mb.jpg is larger than 10 MB.');
+  await expect(page.locator('.photo-card')).toHaveCount(2);
+
+  await page.locator('#photo-input').setInputFiles(pngPayload('after-size-error.png'));
+  await expect(page.locator('.photo-card')).toHaveCount(3);
+  await expect(page.getByText('1 photo added locally.')).toBeVisible();
 });
 
 test('@claim:fragment-share creates a text-only fragment link', async ({ page, context }) => {

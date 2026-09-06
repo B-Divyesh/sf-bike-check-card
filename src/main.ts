@@ -50,7 +50,7 @@ function shell(content: string, active = '') {
     <footer>
       <p>Record bike-fault evidence for a mechanic or cycling community.</p>
       <nav aria-label="Legal"><a href="/privacy" data-nav>Privacy</a><a href="/terms" data-nav>Terms</a></nav>
-      <p class="generated-note">Built by Param Factory · v1.1.0 · polish-1 · Original generated artwork.</p>
+      <p class="generated-note">Built by Param Factory · v1.1.1 · repair-2 · Original generated artwork.</p>
     </footer>
     <div class="visually-hidden" id="route-announcer" role="status" aria-live="polite" aria-atomic="true"></div>
     <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>`;
@@ -157,7 +157,7 @@ function editorTemplate(card: CheckCard) {
           ${textarea('Other observations', 'notes', card.notes, 'Reproduction steps, wear, visible fibres, noises, looseness, or error messages')}
         </div></section>
         <section class="form-section" aria-labelledby="photo-title"><div class="section-head"><span>04</span><div><h2 id="photo-title">Attach and mark evidence</h2><p>Up to six photos. They stay on this device unless included in an export or print.</p></div></div>
-          <div class="photo-upload"><label class="button button-secondary" for="photo-input">Add photos</label><input class="visually-hidden" id="photo-input" type="file" accept="image/*" capture="environment" multiple><span>JPG, PNG, HEIC where supported · 10 MB each</span></div>
+          <div class="photo-upload"><label class="button button-secondary" for="photo-input">Add photos</label><input class="visually-hidden" id="photo-input" type="file" accept="image/jpeg,image/png" capture="environment" multiple><span>JPG and PNG · 10 MB each</span></div>
           <p class="form-error" id="photo-error" role="alert"></p>
           ${card.photos.length ? `<ul class="photo-grid">${card.photos.map(photoTemplate).join('')}</ul>` : '<div class="empty-inline"><strong>No photos yet.</strong><p>A clear overview plus one close-up usually makes the handoff easier.</p></div>'}
         </section>
