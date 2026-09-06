@@ -1,63 +1,80 @@
-# Bike Check Card — repair handoff
+# Bike Check Card — verification 3 handoff
 
-- Work order: `bike-check-card-repair-2`
+- Work order: `bike-check-card-verify-3`
 - Completed: 2026-09-06
 - Live: <https://bike-check-card.sociobot.in>
+- Verdict: **FAIL**
+- Findings: 3
+- Untested public claims: 4
+- Deployed implementation: `d5364639a7f32e8d19ffa8cf7abefb98701b1e3e`
+- Documentation reviewed: `e8dd43d982f56c5da43b5cd09f60392f771304d3`
 
 ## Result
 
-Review 3 finding F-3-1 is fixed. Sharing prerequisites, the six-photo limit, accepted JPG/PNG formats, and the inclusive 10 MB limit each have a registered outcome test covering normal, invalid, boundary, and recovery behavior.
+The deployed implementation matches the clean local build and its main job
+works. All 16 declared claim commands passed independently, the full browser
+suite passed 38/38, and the four claims added for review finding F-3-1 passed
+against production on phone and desktop.
 
-The deployed product behavior is `d5364639a7f32e8d19ffa8cf7abefb98701b1e3e`. The later `c59ee32f7f76dd17ca3c5655ee388420a9ad1b3a` commit changes verification code only; it adds live-base support and correctly classifies the deliberate 404 console message.
+Independent verification found three remaining issues:
 
-The repair report and handoff evidence are recorded at documentation commit `f223629f6c1f36141d1f43b5d00de01883014765`.
+1. Four public promises do not have complete registered tagged tests: saved-card
+   persistence, photo inclusion in print/PDF, preservation of the original
+   photo after marking, and deletion after clearing site data.
+2. The repeated wordmark and footer legal links are shorter than the required
+   44 px touch height.
+3. Malformed backup and shared-link inputs expose raw JSON/parser errors instead
+   of plain recovery instructions.
 
-Deployment `b436a739-5f9d-473f-b90d-66d0f6b69001` succeeded. The live JavaScript and CSS hashes match the implementation build.
+Full evidence and exact remediation are in
+[verification-3.md](verification-3.md).
 
-## What changed
+## Verification completed
 
-- Added four entries to `.factory/claims.json`, bringing the registry to 16 claims.
-- Added one browser test per new claim with observable results.
-- Narrowed the photo promise to JPG and PNG and enforced those MIME types at runtime.
-- Made mixed photo batches atomic so a rejected file cannot leave an unseen partial change.
-- Prevented Playwright from reusing a stale local preview server.
-- Added an optional `PLAYWRIGHT_BASE_URL` path for cold live checks.
-- Kept deliberate HTTP 404 navigation from being misclassified as a console defect.
-
-Full finding evidence is in [repair-2.md](repair-2.md). Earlier review and verification reports remain in `.factory/`.
-
-## Verify locally
+From a clean clone at `e8dd43d`:
 
 ```sh
 npm ci
 npm test
 npm run lint
 npm run build
+# Each of the 16 commands in .factory/claims.json was run independently.
 npm run test:e2e
 ```
 
-Run every `test` command in `.factory/claims.json` independently. To run suitable browser checks against production, set `PLAYWRIGHT_BASE_URL=https://bike-check-card.sociobot.in`.
+Results:
 
-## Verified results
-
-- Unit: 8/8 passed.
-- Registered claims: 16/16 commands passed; 32/32 phone and desktop executions.
-- Full browser suite: 38/38 passed.
-- Build: passed; `dist/` is the deployable root.
+- Unit tests: 8/8.
+- Registered claims: 16/16 commands; 32/32 phone and desktop executions.
+- Full browser suite: 38/38.
 - Production dependency audit: zero vulnerabilities.
-- Live `verify-url.sh`: passed on home and demo with zero console errors.
-- Live Axe: zero serious or critical findings.
-- Live offline, isolation, privacy, route focus, legal pages, links, and expected 404: passed.
-- Lighthouse mobile: 99 Performance, 100 Accessibility, 100 Best Practices, 100 SEO.
-- Payload: 34,301-byte JS, 18,675-byte CSS, no font payload, 60,862-byte mobile hero.
+- Build: passed; `dist/` created.
+- Live F-3-1 claims: 8/8 phone and desktop executions.
+- All live-suitable registered claims except the separately checked fragment
+  assertion: 30/30.
+- Live Axe: zero serious or critical issues across all routes and the 404 at
+  both viewport classes.
+- Live Lighthouse: 100 Performance, 100 Accessibility, 100 Best Practices, 100
+  SEO; LCP 1.1 s, TBT 10 ms, CLS 0.
+- Live `verify-url.sh`: passed home and demo with zero console errors.
+- Offline reload, service-worker update notice, same-origin privacy flow,
+  route focus, legal pages, asset links, security headers, and deliberate 404:
+  passed.
+- Local/live hashes matched for JS, CSS, service worker, manifest, and offline
+  fallback.
 
-## Demo
+Evidence is in `.factory/verification-3.md` and
+`/work/.evidence/verification-3/`.
 
-- URL: <https://bike-check-card.sociobot.in/demo>
-- Demo database: `demo:bike-check-card`
-- Real database: `bike-check-card`
-- Reset replaces only sample data. Start for real returns to the untouched real draft.
+## Required next steps
 
-## Known gaps
+- Register and add tagged outcome tests for the four public promises, or narrow
+  the copy.
+- Increase the repeated wordmark and footer-link hit areas to at least 44 × 44
+  CSS pixels.
+- Replace raw parse errors with plain, actionable backup/link messages and test
+  those invalid and recovery paths.
+- Redeploy the repaired implementation, then rerun every declared claim and
+  fresh live verification.
 
-None found within scope. Bike Check Card intentionally records evidence without diagnosing faults, deciding ride safety, ingesting telemetry, or claiming warranty compatibility.
+No product code was modified during verification.
