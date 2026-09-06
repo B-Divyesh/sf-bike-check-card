@@ -10,6 +10,8 @@ Review 3 finding F-3-1 is fixed. Sharing prerequisites, the six-photo limit, acc
 
 The deployed product behavior is `d5364639a7f32e8d19ffa8cf7abefb98701b1e3e`. The later `c59ee32f7f76dd17ca3c5655ee388420a9ad1b3a` commit changes verification code only; it adds live-base support and correctly classifies the deliberate 404 console message.
 
+The repair report and handoff evidence are recorded at documentation commit `f223629f6c1f36141d1f43b5d00de01883014765`.
+
 Deployment `b436a739-5f9d-473f-b90d-66d0f6b69001` succeeded. The live JavaScript and CSS hashes match the implementation build.
 
 ## What changed

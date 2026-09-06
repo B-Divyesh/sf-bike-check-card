@@ -4,6 +4,7 @@
 - Completed: 2026-09-06
 - Base: `777ec51217a33df9c7e3492eeacf658fbe337089`
 - Deployed implementation: `d5364639a7f32e8d19ffa8cf7abefb98701b1e3e`
+- Documentation evidence: `f223629f6c1f36141d1f43b5d00de01883014765`
 - Live deployment: `b436a739-5f9d-473f-b90d-66d0f6b69001`
 
 ## Result
