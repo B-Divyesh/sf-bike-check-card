@@ -283,7 +283,12 @@ test('routes set titles, metadata, focus, history, and direct URLs', async ({ pa
 
 test('has no serious accessibility violations or console errors', async ({ page }) => {
   const errors: string[] = [];
-  page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+  page.on('console', message => {
+    if (message.type() !== 'error') return;
+    const expectedMissingPage = new URL(page.url()).pathname === '/missing-page'
+      && /^Failed to load resource: the server responded with a status of 404/.test(message.text());
+    if (!expectedMissingPage) errors.push(message.text());
+  });
   page.on('pageerror', error => errors.push(error.message));
   for (const path of ['/', '/demo', '/card', '/cards', '/privacy', '/terms', '/missing-page']) {
     await page.goto(path);
