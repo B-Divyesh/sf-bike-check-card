@@ -85,3 +85,26 @@ rechecked live and in source.
 
 Known gaps: none. Future features should keep the isolated demo namespace and
 add a registered observable claim test for each new visitor-reliance statement.
+
+## Review 3 handoff
+
+Work order: `bike-check-card-review-3`
+Completed: 2026-09-06
+Result: **FAIL** — see [review-3.md](review-3.md).
+
+No product code changed. The live implementation reviewed is
+`efa09a720ec1cc777f54c8a788573bac464fc1d9`; the documentation head is
+`c6474d69e2d31fa1ca13251606bf3c67d3e96dfd`. Their deployed JavaScript and CSS
+matched a clean local build by SHA-256.
+
+Verification completed: fresh phone and desktop live sessions; first-screen
+read; isolated sample, reset, and start-for-real check; normal, invalid,
+boundary, and recovery photo checks; offline reload; same-origin request log;
+Axe; keyboard, focus, and reduced motion; legal routes, metadata, links, and
+designed HTTP 404. `npm ci`, `npm test` (8/8), `npm run lint`, `npm run build`,
+every declared claims command, and `npm run test:e2e` (30/30) passed.
+
+Known gap: the public share prerequisite, six-photo limit, supported image
+format wording, and 10 MB image limit have no entries in `.factory/claims.json`
+or tagged sandbox tests. Add observable claim tests (or narrow/remove the copy)
+and rerun the review before declaring PASS.
